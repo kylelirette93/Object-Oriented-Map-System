@@ -54,8 +54,16 @@ namespace Object_Oriented_Map_System
             {
                 playerPosition.Y -= updatedBallSpeed;
             }
+            else if (kstate.IsKeyDown(Keys.W))
+            {
+               playerPosition.Y -= updatedBallSpeed;
+            }
 
             if (kstate.IsKeyDown(Keys.Down))
+            {
+                playerPosition.Y += updatedBallSpeed;
+            }
+            else if(kstate.IsKeyDown(Keys.S))
             {
                 playerPosition.Y += updatedBallSpeed;
             }
@@ -64,8 +72,16 @@ namespace Object_Oriented_Map_System
             {
                 playerPosition.X -= updatedBallSpeed;
             }
+            else if (kstate.IsKeyDown(Keys.A))
+            {
+                playerPosition.X -= updatedBallSpeed;
+            }
 
             if (kstate.IsKeyDown(Keys.Right))
+            {
+                playerPosition.X += updatedBallSpeed;
+            }
+            else if (kstate.IsKeyDown(Keys.D))
             {
                 playerPosition.X += updatedBallSpeed;
             }
