@@ -3,6 +3,9 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using Point = Microsoft.Xna.Framework.Point;
+using Color = Microsoft.Xna.Framework.Color;
 
 namespace Object_Oriented_Map_System
 {
@@ -86,6 +89,8 @@ namespace Object_Oriented_Map_System
         private int tileWidth = 32;
         private int tileHeight = 32;
 
+        public int TileWidth { get { return tileWidth; } }
+        public int TileHeight { get { return tileHeight; } }
         public int MapWidth { get { return Columns * tileWidth; } }
         public int MapHeight { get { return Rows * tileHeight; } }
 
@@ -238,7 +243,10 @@ namespace Object_Oriented_Map_System
         // Player fields
         Texture2D playerTexture;
         Vector2 playerPosition;
-        float playerSpeed;
+        //float playerSpeed;
+
+        private Point playerGridPosition;
+        private KeyboardState previousKeyboardState;
 
         // Map instance
         private Map gameMap;
@@ -252,13 +260,25 @@ namespace Object_Oriented_Map_System
 
         protected override void Initialize()
         {
-            // Set initial player position at the center of the screen.
-            playerPosition = new Vector2(_graphics.PreferredBackBufferWidth / 2,
-                                         _graphics.PreferredBackBufferHeight / 2);
-            playerSpeed = 100f;
-
             // Create a map with at least 10 rows x 15 columns.
             gameMap = new Map(10, 15);
+
+            int startCol = gameMap.Columns / 2;
+            int startRow = gameMap.Rows / 2;
+            if (startCol == 0) startCol = 1;
+            if (startRow == 0) startRow = 1;
+            if (startCol >= gameMap.Columns - 1) startCol = gameMap.Columns - 2;
+            if (startRow >= gameMap.Rows - 1) startRow = gameMap.Rows - 2;
+
+            playerGridPosition = new Point(startCol, startRow);
+
+            // Calculate the player's pixel position relative to the map.
+            playerPosition = new Vector2(
+                playerGridPosition.X * gameMap.TileWidth + gameMap.TileWidth / 2,
+                playerGridPosition.Y * gameMap.TileHeight + gameMap.TileHeight / 2);
+
+            // Initialize previousKeyboardState
+            previousKeyboardState = Keyboard.GetState();
 
             base.Initialize();
         }
@@ -284,32 +304,37 @@ namespace Object_Oriented_Map_System
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed ||
                 Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+          
+            KeyboardState currentKeyboardState = Keyboard.GetState();
 
-            float delta = playerSpeed * (float)gameTime.ElapsedGameTime.TotalSeconds;
-            KeyboardState kstate = Keyboard.GetState();
+            // Only move one grid cell per key press:
+            if (currentKeyboardState.IsKeyDown(Keys.Up) && !previousKeyboardState.IsKeyDown(Keys.Up))
+            {
+                if (playerGridPosition.Y > 1)  // avoid border row 0
+                    playerGridPosition.Y--;
+            }
+            if (currentKeyboardState.IsKeyDown(Keys.Down) && !previousKeyboardState.IsKeyDown(Keys.Down))
+            {
+                if (playerGridPosition.Y < gameMap.Rows - 2) // avoid last border row
+                    playerGridPosition.Y++;
+            }
+            if (currentKeyboardState.IsKeyDown(Keys.Left) && !previousKeyboardState.IsKeyDown(Keys.Left))
+            {
+                if (playerGridPosition.X > 1)  // avoid border column 0
+                    playerGridPosition.X--;
+            }
+            if (currentKeyboardState.IsKeyDown(Keys.Right) && !previousKeyboardState.IsKeyDown(Keys.Right))
+            {
+                if (playerGridPosition.X < gameMap.Columns - 2) // avoid last border column
+                    playerGridPosition.X++;
+            }
 
-            // Basic player movement.
-            if (kstate.IsKeyDown(Keys.Up) || kstate.IsKeyDown(Keys.W))
-                playerPosition.Y -= delta;
-            if (kstate.IsKeyDown(Keys.Down) || kstate.IsKeyDown(Keys.S))
-                playerPosition.Y += delta;
-            if (kstate.IsKeyDown(Keys.Left) || kstate.IsKeyDown(Keys.A))
-                playerPosition.X -= delta;
-            if (kstate.IsKeyDown(Keys.Right) || kstate.IsKeyDown(Keys.D))
-                playerPosition.X += delta;
+            // Update the player's pixel position using the map's tile dimensions.
+            playerPosition = new Vector2(
+                playerGridPosition.X * gameMap.TileWidth + gameMap.TileWidth / 2,
+                playerGridPosition.Y * gameMap.TileHeight + gameMap.TileHeight / 2);
 
-            // Constrain player within the screen.
-            if (playerPosition.X > _graphics.PreferredBackBufferWidth - playerTexture.Width / 2)
-                playerPosition.X = _graphics.PreferredBackBufferWidth - playerTexture.Width / 2;
-            else if (playerPosition.X < playerTexture.Width / 2)
-                playerPosition.X = playerTexture.Width / 2;
-
-            if (playerPosition.Y > _graphics.PreferredBackBufferHeight - playerTexture.Height / 2)
-                playerPosition.Y = _graphics.PreferredBackBufferHeight - playerTexture.Height / 2;
-            else if (playerPosition.Y < playerTexture.Height / 2)
-                playerPosition.Y = playerTexture.Height / 2;
-
-            // Future work: check for collisions with non-walkable tiles, trigger level exit, etc.
+            previousKeyboardState = currentKeyboardState;
 
             base.Update(gameTime);
         }
@@ -327,22 +352,14 @@ namespace Object_Oriented_Map_System
             _spriteBatch.Begin(
                 transformMatrix: Matrix.CreateTranslation(mapOffset.X, mapOffset.Y, 0),
                 samplerState: SamplerState.PointClamp);
-            gameMap.Draw(_spriteBatch);
-            _spriteBatch.End();
 
-            // If your player should be drawn relative to the screen (not the map),
-            // you can draw it in a separate sprite batch Begin/End block.
-            _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-            _spriteBatch.Draw(
-                playerTexture,
-                playerPosition,
-                null,
-                Color.White,
-                0f,
-                new Vector2(playerTexture.Width / 2, playerTexture.Height / 2),
-                Vector2.One,
-                SpriteEffects.None,
-                0f);
+            gameMap.Draw(_spriteBatch);
+          
+            // Draw the player using the grid-based pixel position.
+            _spriteBatch.Draw(playerTexture, playerPosition, null,
+                Color.White, 0f, new Vector2(playerTexture.Width / 2, playerTexture.Height / 2),
+                       Vector2.One, SpriteEffects.None, 0f);
+
             _spriteBatch.End();
 
             base.Draw(gameTime);
