@@ -126,29 +126,48 @@ namespace Object_Oriented_Map_System
         {
             Random rand = new Random();
 
-            // Decide on 1 or 2 exit tiles
-            int exitCount = rand.Next(1, 3); // Returns 1 or 2
+            // Decide on 2 - 4 exit tiles
+            int exitCount = rand.Next(2, 5); // Returns 2, 3 or 4
 
-            // Create a list of border positions (using row, col coordinates)
-            List<Point> borderPositions = new List<Point>();
-            for (int row = 0; row < Rows; row++)
+            // List to store selected exit positions (grid coordinates: X=col, Y=row)
+            List<Point> exitPositions = new List<Point>();
+
+            // We'll use wall indices: 0 = top, 1 = right, 2 = bottom, 3 = left.
+            List<int> selectedWalls = new List<int>();
+            while (selectedWalls.Count < exitCount)
             {
-                for (int col = 0; col < Columns; col++)
-                {
-                    if (row == 0 || row == Rows - 1 || col == 0 || col == Columns - 1)
-                    {
-                        borderPositions.Add(new Point(row, col));
-                    }
-                }
+                int wall = rand.Next(0, 4); // returns 0,1,2, or 3
+                if (!selectedWalls.Contains(wall))
+                    selectedWalls.Add(wall);
             }
 
-            // Randomly select exit positions from the border positions.
-            List<Point> exitPositions = new List<Point>();
-            for (int i = 0; i < exitCount && borderPositions.Count > 0; i++)
+            // For each selected wall, choose a random exit position.
+            foreach (int wall in selectedWalls)
             {
-                int index = rand.Next(borderPositions.Count);
-                exitPositions.Add(borderPositions[index]);
-                borderPositions.RemoveAt(index);
+                switch (wall)
+                {
+                    case 0: // Top wall: row = 0, valid columns are 1 to Columns-2 (avoiding corners)
+                        int topCol = rand.Next(1, Columns - 1);
+                        // Ensure we don't get a corner (if Columns-1 is returned, subtract one)
+                        if (topCol == Columns - 1) topCol = Columns - 2;
+                        exitPositions.Add(new Point(topCol, 0));
+                        break;
+                    case 1: // Right wall: col = Columns - 1, valid rows are 1 to Rows-2
+                        int rightRow = rand.Next(1, Rows - 1);
+                        if (rightRow == Rows - 1) rightRow = Rows - 2;
+                        exitPositions.Add(new Point(Columns - 1, rightRow));
+                        break;
+                    case 2: // Bottom wall: row = Rows - 1, valid columns are 1 to Columns-2
+                        int bottomCol = rand.Next(1, Columns - 1);
+                        if (bottomCol == Columns - 1) bottomCol = Columns - 2;
+                        exitPositions.Add(new Point(bottomCol, Rows - 1));
+                        break;
+                    case 3: // Left wall: col = 0, valid rows are 1 to Rows-2
+                        int leftRow = rand.Next(1, Rows - 1);
+                        if (leftRow == Rows - 1) leftRow = Rows - 2;
+                        exitPositions.Add(new Point(0, leftRow));
+                        break;
+                }
             }
 
             // Now fill the map.
@@ -156,26 +175,22 @@ namespace Object_Oriented_Map_System
             {
                 for (int col = 0; col < Columns; col++)
                 {
-                    // Calculate the tile's position in pixels
+                    // Calculate the tile's pixel position.
                     Vector2 position = new Vector2(col * tileWidth, row * tileHeight);
 
                     // Check if the tile is on the border.
                     if (row == 0 || row == Rows - 1 || col == 0 || col == Columns - 1)
                     {
-                        // If it's one of the chosen exit positions, set it as an exit tile.
-                        if (exitPositions.Exists(p => p.X == row && p.Y == col))
-                        {
+                        // If this border tile is one of the pre-selected exit positions, place an exit tile.
+                        // Remember: exitPositions stores (X=col, Y=row).
+                        if (exitPositions.Exists(p => p.X == col && p.Y == row))
                             Tiles[row, col] = new ExitTile(exitTexture, position);
-                        }
                         else
-                        {
-                            // Otherwise, it's a non-walkable border tile.
                             Tiles[row, col] = new NonWalkableTile(nonWalkableTexture, position);
-                        }
                     }
                     else
                     {
-                        // All inner tiles are walkable.
+                        // Inner tiles are walkable.
                         Tiles[row, col] = new WalkableTile(walkableTexture, position);
                     }
                 }
@@ -185,7 +200,7 @@ namespace Object_Oriented_Map_System
         /// <summary>
         /// Loads a predefined map from a text file.
         /// Example file content (each character represents a tile):
-        ///   . = walkable, # = non-walkable, E = exit
+        ///   w = walkable, # = non-walkable, E = exit
         /// </summary>
         public void LoadMapFromFile(string filename)
         {
@@ -201,7 +216,7 @@ namespace Object_Oriented_Map_System
                     Vector2 position = new Vector2(col * tileWidth, row * tileHeight);
                     char c = lines[row][col];
 
-                    if (c == '.')
+                    if (c == 'w')
                     {
                         Tiles[row, col] = new WalkableTile(walkableTexture, position);
                     }
@@ -293,9 +308,18 @@ namespace Object_Oriented_Map_System
             // Load tile textures for the map.
             gameMap.LoadContent(Content);
 
-            // For this sprint, generate a random map.
-            // In a future sprint you can switch to gameMap.LoadMapFromFile("YourMapFile.txt");
             gameMap.GenerateRandomMap();
+        }
+
+        private bool IsCellAccessible(int col, int row)
+        {
+            // Ensure the coordinates are within bounds.
+            if (row < 0 || row >= gameMap.Rows || col < 0 || col >= gameMap.Columns)
+                return false;
+
+            Tile destinationTile = gameMap.Tiles[row, col];
+            // Allow movement if the tile is walkable or an exit tile.
+            return destinationTile != null && (destinationTile.Walkable || destinationTile is ExitTile);
         }
 
         protected override void Update(GameTime gameTime)
@@ -307,26 +331,48 @@ namespace Object_Oriented_Map_System
           
             KeyboardState currentKeyboardState = Keyboard.GetState();
 
-            // Only move one grid cell per key press:
-            if (currentKeyboardState.IsKeyDown(Keys.Up) && !previousKeyboardState.IsKeyDown(Keys.Up))
+            // Move Up
+            if ((currentKeyboardState.IsKeyDown(Keys.Up) || currentKeyboardState.IsKeyDown(Keys.W)) &&
+                !(previousKeyboardState.IsKeyDown(Keys.Up) || previousKeyboardState.IsKeyDown(Keys.W)))
             {
-                if (playerGridPosition.Y > 1)  // avoid border row 0
-                    playerGridPosition.Y--;
+                int newRow = playerGridPosition.Y - 1;
+                if (IsCellAccessible(playerGridPosition.X, newRow))
+                {
+                    playerGridPosition.Y = newRow;
+                }
             }
-            if (currentKeyboardState.IsKeyDown(Keys.Down) && !previousKeyboardState.IsKeyDown(Keys.Down))
+
+            // Move Down
+            if ((currentKeyboardState.IsKeyDown(Keys.Down) || currentKeyboardState.IsKeyDown(Keys.S)) &&
+                !(previousKeyboardState.IsKeyDown(Keys.Down) || previousKeyboardState.IsKeyDown(Keys.S)))
             {
-                if (playerGridPosition.Y < gameMap.Rows - 2) // avoid last border row
-                    playerGridPosition.Y++;
+                int newRow = playerGridPosition.Y + 1;
+                if (IsCellAccessible(playerGridPosition.X, newRow))
+                {
+                    playerGridPosition.Y = newRow;
+                }
             }
-            if (currentKeyboardState.IsKeyDown(Keys.Left) && !previousKeyboardState.IsKeyDown(Keys.Left))
+
+            // Move Left
+            if ((currentKeyboardState.IsKeyDown(Keys.Left) || currentKeyboardState.IsKeyDown(Keys.A)) &&
+                !(previousKeyboardState.IsKeyDown(Keys.Left) || previousKeyboardState.IsKeyDown(Keys.A)))
             {
-                if (playerGridPosition.X > 1)  // avoid border column 0
-                    playerGridPosition.X--;
+                int newCol = playerGridPosition.X - 1;
+                if (IsCellAccessible(newCol, playerGridPosition.Y))
+                {
+                    playerGridPosition.X = newCol;
+                }
             }
-            if (currentKeyboardState.IsKeyDown(Keys.Right) && !previousKeyboardState.IsKeyDown(Keys.Right))
+
+            // Move Right
+            if ((currentKeyboardState.IsKeyDown(Keys.Right) || currentKeyboardState.IsKeyDown(Keys.D)) &&
+                !(previousKeyboardState.IsKeyDown(Keys.Right) || previousKeyboardState.IsKeyDown(Keys.D)))
             {
-                if (playerGridPosition.X < gameMap.Columns - 2) // avoid last border column
-                    playerGridPosition.X++;
+                int newCol = playerGridPosition.X + 1;
+                if (IsCellAccessible(newCol, playerGridPosition.Y))
+                {
+                    playerGridPosition.X = newCol;
+                }
             }
 
             // Update the player's pixel position using the map's tile dimensions.
@@ -335,6 +381,14 @@ namespace Object_Oriented_Map_System
                 playerGridPosition.Y * gameMap.TileHeight + gameMap.TileHeight / 2);
 
             previousKeyboardState = currentKeyboardState;
+
+            //Check if the Player's current tile is an exit tile
+            if (gameMap.Tiles[playerGridPosition.Y, playerGridPosition.X] is ExitTile)
+            {
+                //The player has moved into an ExitTile.
+                //Load a new map (Pre-made if available, random otherwise)
+                LoadNewMap();
+            }
 
             base.Update(gameTime);
         }
@@ -363,6 +417,49 @@ namespace Object_Oriented_Map_System
             _spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        private void LoadNewMap()
+        {
+            // Define the path and required dimensions for a pre-made map.
+            string mapFilePath = "Content/Maps/premadeMap.txt";
+            int requiredRows = 10;
+            int requiredColumns = 15;
+
+            // Check if the premade map file exists.
+            if (System.IO.File.Exists(mapFilePath))
+            {
+                string[] mapLines = System.IO.File.ReadAllLines(mapFilePath);
+                if (mapLines.Length == requiredRows && mapLines[0].Length == requiredColumns)
+                {
+                    // Load the pre-made map.
+                    gameMap.LoadMapFromFile(mapFilePath);
+                }
+                else
+                {
+                    // File exists but dimensions are off; fall back to random generation.
+                    gameMap.GenerateRandomMap();
+                }
+            }
+            else
+            {
+                // No pre-made file found; generate a random map.
+                gameMap.GenerateRandomMap();
+            }
+
+            // Reset the player's grid position to a safe starting cell.
+            // For example, use the center of the inner area (avoiding the border).
+            int startCol = gameMap.Columns / 2;
+            int startRow = gameMap.Rows / 2;
+            if (startCol == 0) startCol = 1;
+            if (startRow == 0) startRow = 1;
+            if (startCol >= gameMap.Columns - 1) startCol = gameMap.Columns - 2;
+            if (startRow >= gameMap.Rows - 1) startRow = gameMap.Rows - 2;
+
+            playerGridPosition = new Point(startCol, startRow);
+            playerPosition = new Vector2(
+                playerGridPosition.X * gameMap.TileWidth + gameMap.TileWidth / 2,
+                playerGridPosition.Y * gameMap.TileHeight + gameMap.TileHeight / 2);
         }
     }
 }
