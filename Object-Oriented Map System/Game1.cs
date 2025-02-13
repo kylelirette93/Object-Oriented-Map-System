@@ -2,6 +2,8 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
+using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 using System.Drawing;
 using Point = Microsoft.Xna.Framework.Point;
@@ -258,10 +260,14 @@ namespace Object_Oriented_Map_System
         // Player fields
         Texture2D playerTexture;
         Vector2 playerPosition;
-        //float playerSpeed;
 
         private Point playerGridPosition;
         private KeyboardState previousKeyboardState;
+
+        private List<string> premadeMapFiles = new List<string>();
+        private int currentPremadeMapIndex = 0;
+        private const int requiredRows = 10;
+        private const int requiredColumns = 15;
 
         // Map instance
         private Map gameMap;
@@ -308,7 +314,29 @@ namespace Object_Oriented_Map_System
             // Load tile textures for the map.
             gameMap.LoadContent(Content);
 
-            gameMap.GenerateRandomMap();
+            // Define the maps folder and search for text files.
+            string mapsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Content", "Maps");
+
+            // Check if the folder exists.
+            if (Directory.Exists(mapsFolder))
+            {
+                // Retrieve all .txt map files and shuffle them.
+                Random rand = new Random();
+                premadeMapFiles = Directory.GetFiles(mapsFolder, "*.txt")
+                                            .OrderBy(x => rand.Next())
+                                            .ToList();
+            }
+
+            // Load the first premade map if available; otherwise, generate a random map.
+            if (premadeMapFiles.Count > 0)
+            {
+                LoadPremadeMap(premadeMapFiles[currentPremadeMapIndex]);
+                currentPremadeMapIndex++;
+            }
+            else
+            {
+                gameMap.GenerateRandomMap();
+            }
         }
 
         private bool IsCellAccessible(int col, int row)
@@ -385,9 +413,16 @@ namespace Object_Oriented_Map_System
             //Check if the Player's current tile is an exit tile
             if (gameMap.Tiles[playerGridPosition.Y, playerGridPosition.X] is ExitTile)
             {
-                //The player has moved into an ExitTile.
-                //Load a new map (Pre-made if available, random otherwise)
-                LoadNewMap();
+                if (currentPremadeMapIndex < premadeMapFiles.Count)
+                {
+                    LoadPremadeMap(premadeMapFiles[currentPremadeMapIndex]);
+                    currentPremadeMapIndex++;
+                }
+                else
+                {
+                    // All premade maps have been used; fall back to a random map.
+                    gameMap.GenerateRandomMap();
+                }
             }
 
             base.Update(gameTime);
@@ -419,40 +454,25 @@ namespace Object_Oriented_Map_System
             base.Draw(gameTime);
         }
 
-        private void LoadNewMap()
+        private void LoadPremadeMap(string mapFilePath)
         {
-            // Define the path and required dimensions for a pre-made map.
-            string mapFilePath = "Content/Maps/premadeMap.txt";
-            int requiredRows = 10;
-            int requiredColumns = 15;
-
-            // Check if the premade map file exists.
-            if (System.IO.File.Exists(mapFilePath))
+            string[] lines = File.ReadAllLines(mapFilePath);
+            // Check that the map dimensions are correct.
+            if (lines.Length == requiredRows && lines[0].Length == requiredColumns)
             {
-                string[] mapLines = System.IO.File.ReadAllLines(mapFilePath);
-                if (mapLines.Length == requiredRows && mapLines[0].Length == requiredColumns)
-                {
-                    // Load the pre-made map.
-                    gameMap.LoadMapFromFile(mapFilePath);
-                }
-                else
-                {
-                    // File exists but dimensions are off; fall back to random generation.
-                    gameMap.GenerateRandomMap();
-                }
+                gameMap.LoadMapFromFile(mapFilePath);
             }
             else
             {
-                // No pre-made file found; generate a random map.
+                // If dimensions are off, generate a random map.
                 gameMap.GenerateRandomMap();
             }
 
             // Reset the player's grid position to a safe starting cell.
-            // For example, use the center of the inner area (avoiding the border).
             int startCol = gameMap.Columns / 2;
             int startRow = gameMap.Rows / 2;
-            if (startCol == 0) startCol = 1;
-            if (startRow == 0) startRow = 1;
+            if (startCol <= 0) startCol = 1;
+            if (startRow <= 0) startRow = 1;
             if (startCol >= gameMap.Columns - 1) startCol = gameMap.Columns - 2;
             if (startRow >= gameMap.Rows - 1) startRow = gameMap.Rows - 2;
 
