@@ -304,6 +304,24 @@ namespace Object_Oriented_Map_System
             base.Initialize();
         }
 
+        private void ResetPlayerPosition()
+        {
+            // Calculate a safe starting cell in the inner area (avoid the border)
+            int startCol = gameMap.Columns / 2;
+            int startRow = gameMap.Rows / 2;
+
+            // Ensure the starting cell is not on the border
+            if (startCol <= 0) startCol = 1;
+            if (startRow <= 0) startRow = 1;
+            if (startCol >= gameMap.Columns - 1) startCol = gameMap.Columns - 2;
+            if (startRow >= gameMap.Rows - 1) startRow = gameMap.Rows - 2;
+
+            playerGridPosition = new Point(startCol, startRow);
+            playerPosition = new Vector2(
+                playerGridPosition.X * gameMap.TileWidth + gameMap.TileWidth / 2,
+                playerGridPosition.Y * gameMap.TileHeight + gameMap.TileHeight / 2);
+        }
+
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
@@ -422,6 +440,7 @@ namespace Object_Oriented_Map_System
                 {
                     // All premade maps have been used; fall back to a random map.
                     gameMap.GenerateRandomMap();
+                    ResetPlayerPosition();
                 }
             }
 
@@ -480,6 +499,8 @@ namespace Object_Oriented_Map_System
             playerPosition = new Vector2(
                 playerGridPosition.X * gameMap.TileWidth + gameMap.TileWidth / 2,
                 playerGridPosition.Y * gameMap.TileHeight + gameMap.TileHeight / 2);
+
+            ResetPlayerPosition();
         }
     }
 }
