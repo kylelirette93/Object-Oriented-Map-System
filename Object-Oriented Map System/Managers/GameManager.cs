@@ -20,6 +20,7 @@ namespace Object_Oriented_Map_System.Managers
         private Map gameMap;
         private Texture2D playerTexture;
         private Texture2D enemyTexture;
+        private Texture2D openExitTexture;
         private Vector2 playerPosition;
         private Point playerGridPosition;
         private KeyboardState previousKeyboardState;
@@ -46,7 +47,8 @@ namespace Object_Oriented_Map_System.Managers
         public void LoadContent()
         {
             playerTexture = _content.Load<Texture2D>("player");
-            enemyTexture = _content.Load<Texture2D>("enemy"); // Load enemy texture
+            enemyTexture = _content.Load<Texture2D>("rat"); // Load enemy texture
+            openExitTexture = _content.Load<Texture2D>("OpenExitTile");
             gameMap.LoadContent(_content);
             turnManager.StartPlayerTurn();
 
@@ -111,6 +113,8 @@ namespace Object_Oriented_Map_System.Managers
             }
 
             previousKeyboardState = currentKeyboardState;
+
+            CheckExitTile();
         }
 
         public void Draw(SpriteBatch spriteBatch)
@@ -135,6 +139,30 @@ namespace Object_Oriented_Map_System.Managers
                 Vector2.One, SpriteEffects.None, 0f);
 
             spriteBatch.End();
+        }
+
+        private void CheckExitTile()
+        {
+            // If all enemies are defeated, change the exit tile
+            if (Enemies.Count == 0)
+            {
+                ReplaceExitTile();
+            }
+        }
+
+        private void ReplaceExitTile()
+        {
+            for (int row = 0; row < gameMap.Rows; row++)
+            {
+                for (int col = 0; col < gameMap.Columns; col++)
+                {
+                    if (gameMap.Tiles[row, col] is ExitTile)
+                    {
+                        Vector2 tilePosition = gameMap.Tiles[row, col].Position;
+                        gameMap.Tiles[row, col] = new OpenExitTile(openExitTexture, tilePosition);
+                    }
+                }
+            }
         }
 
         public void HandlePlayerTurn(KeyboardState currentKeyboardState)

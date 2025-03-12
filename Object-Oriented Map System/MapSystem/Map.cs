@@ -27,6 +27,7 @@ namespace Object_Oriented_Map_System.MapSystem
         private Texture2D walkableTexture;
         private Texture2D nonWalkableTexture;
         private Texture2D exitTexture;
+        private Texture2D openExitTexture;
 
         public Map(int rows, int columns)
         {
@@ -40,6 +41,7 @@ namespace Object_Oriented_Map_System.MapSystem
             walkableTexture = content.Load<Texture2D>("walkTile");
             nonWalkableTexture = content.Load<Texture2D>("wallTile");
             exitTexture = content.Load<Texture2D>("exitTile");
+            openExitTexture = content.Load<Texture2D>("OpenExitTile");
 
             tileWidth = walkableTexture.Width;
             tileHeight = walkableTexture.Height;
