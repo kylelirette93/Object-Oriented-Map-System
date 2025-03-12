@@ -8,7 +8,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Object_Oriented_Map_System.MapSystem;
 using Object_Oriented_Map_System.MapSystem.Tiles;
-using Object_Oriented_Map_System.Entities; // Include Enemy class
+using Object_Oriented_Map_System.Entities; 
 using Microsoft.Xna.Framework.Audio;
 
 namespace Object_Oriented_Map_System.Managers
@@ -74,7 +74,7 @@ namespace Object_Oriented_Map_System.Managers
             }
 
             ResetPlayerPosition();
-            SpawnEnemies(3); // Spawn 3 enemies
+            SpawnEnemies(0); // Spawn 3 enemies
         }
 
         private void LoadPremadeMap(string mapFilePath)
@@ -159,7 +159,8 @@ namespace Object_Oriented_Map_System.Managers
                     if (gameMap.Tiles[row, col] is ExitTile)
                     {
                         Vector2 tilePosition = gameMap.Tiles[row, col].Position;
-                        gameMap.Tiles[row, col] = new OpenExitTile(openExitTexture, tilePosition);
+                        
+                        gameMap.Tiles[row, col] = new OpenExitTile(gameMap.openExitTexture, tilePosition);
                     }
                 }
             }
@@ -202,8 +203,22 @@ namespace Object_Oriented_Map_System.Managers
         {
             if (row < 0 || row >= gameMap.Rows || col < 0 || col >= gameMap.Columns)
                 return false;
+
             Tile destinationTile = gameMap.Tiles[row, col];
-            return destinationTile != null && (destinationTile.Walkable || destinationTile is ExitTile);
+
+            // Allow movement onto OpenExitTile
+            if (destinationTile is OpenExitTile)
+            {
+                return true;
+            }
+
+            // Block movement into ExitTile (until replaced)
+            if (destinationTile is ExitTile)
+            {
+                return false;
+            }
+
+            return destinationTile != null && destinationTile.Walkable;
         }
 
         private void ResetPlayerPosition()

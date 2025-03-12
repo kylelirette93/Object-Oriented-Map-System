@@ -27,7 +27,7 @@ namespace Object_Oriented_Map_System.MapSystem
         private Texture2D walkableTexture;
         private Texture2D nonWalkableTexture;
         private Texture2D exitTexture;
-        private Texture2D openExitTexture;
+        public Texture2D openExitTexture;
 
         public Map(int rows, int columns)
         {
