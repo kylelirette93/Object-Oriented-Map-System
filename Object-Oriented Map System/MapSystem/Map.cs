@@ -130,6 +130,17 @@ namespace Object_Oriented_Map_System.MapSystem
             }
         }
 
+        public bool IsTileWalkable(Point gridPosition)
+        {
+            if (gridPosition.X < 0 || gridPosition.Y < 0 ||
+                gridPosition.X >= Columns || gridPosition.Y >= Rows)
+            {
+                return false;
+            }
+
+            return Tiles[gridPosition.Y, gridPosition.X] is WalkableTile;
+        }
+
         public void Draw(SpriteBatch spriteBatch)
         {
             for (int row = 0; row < Rows; row++)
