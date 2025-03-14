@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using System.IO;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Object_Oriented_Map_System.Managers;
@@ -45,6 +47,15 @@ namespace Object_Oriented_Map_System
             GraphicsDevice.Clear(Color.CornflowerBlue);
             gameManager.Draw(_spriteBatch);
             base.Draw(gameTime);
+        }
+
+        private void LogToFile(string message)
+        {
+            string logPath = "debug_log.txt";
+            using (StreamWriter writer = new StreamWriter(logPath, true))
+            {
+                writer.WriteLine($"{DateTime.Now}: {message}");
+            }
         }
     }
 }

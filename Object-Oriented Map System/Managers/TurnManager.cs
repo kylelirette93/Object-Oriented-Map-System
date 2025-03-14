@@ -1,84 +1,88 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.IO;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using Object_Oriented_Map_System.Managers;
 using Object_Oriented_Map_System.Entities;
+using Object_Oriented_Map_System.Managers;
 
 namespace Object_Oriented_Map_System.Managers
 {
-    public enum TurnPhase { PlayerTurn, EnemyTurn }
+    public enum TurnState
+    {
+        PlayerTurn,
+        EnemyTurn
+    }
 
     public class TurnManager
     {
-        private TurnPhase currentPhase;
+        public TurnState CurrentTurn { get; private set; }
         private GameManager gameManager;
-        private int enemyIndex = 0;  // Tracks which enemy is currently acting
+        private int currentEnemyIndex = 0; // Track which enemy is taking its turn
 
         public TurnManager(GameManager manager)
         {
             gameManager = manager;
-            currentPhase = TurnPhase.PlayerTurn;
+            CurrentTurn = TurnState.PlayerTurn; // Start with player turn
         }
 
-        public void StartPlayerTurn()
+        public void StartPlayerTurn() 
         {
-            currentPhase = TurnPhase.PlayerTurn;
-            enemyIndex = 0; // Reset enemy tracking
-        }
-
-        public void StartEnemyTurn()
-        {
-            currentPhase = TurnPhase.EnemyTurn;
-            enemyIndex = 0;
-        }
-
-        public void Update(GameTime gameTime)
-        {
-            if (currentPhase == TurnPhase.PlayerTurn)
-            {
-                gameManager.HandlePlayerTurn(Keyboard.GetState());
-            }
-            else if (currentPhase == TurnPhase.EnemyTurn)
-            {
-                if (gameManager.Enemies.Count > 0)
-                {
-                    HandleEnemyTurn(gameTime);
-                }
-                else
-                {
-                    StartPlayerTurn(); // No enemies left, back to player
-                }
-            }
+            LogToFile("Starting Player Turn...");
+            CurrentTurn = TurnState.PlayerTurn;
+            gameManager.SetPlayerCanMove(true);
         }
 
         public bool IsPlayerTurn()
         {
-            return currentPhase == TurnPhase.PlayerTurn;
+            return CurrentTurn == TurnState.PlayerTurn;
         }
 
-        private void HandleEnemyTurn(GameTime gameTime)
+        public void EndPlayerTurn()
         {
-            if (enemyIndex < gameManager.Enemies.Count)
+            LogToFile("Player turn ended. Switching to Enemy Turn.");
+            CurrentTurn = TurnState.EnemyTurn;
+            currentEnemyIndex = 0;
+            StartEnemyTurn();
+        }
+
+        private void StartEnemyTurn()
+        {
+            LogToFile("Enemy turn started. Processing enemy actions...");
+
+            ProcessNextEnemy(0); // Start enemy actions, ensuring they move in sequence
+        }
+
+        private void ProcessNextEnemy(int index)
+        {
+            if (index < gameManager.Enemies.Count)
             {
-                Enemy currentEnemy = gameManager.Enemies[enemyIndex];
+                Enemy enemy = gameManager.Enemies[index];
+                LogToFile($"Processing turn for Enemy at {enemy.GridPosition}...");
 
-                if (!currentEnemy.IsStunned)
+                // Enemy takes turn, then we process the next enemy after a delay
+                enemy.TakeTurn(() =>
                 {
-                    currentEnemy.TakeTurn();
-                }
-                else
-                {
-                    currentEnemy.RecoverFromStun();
-                }
+                    ProcessNextEnemy(index + 1);
+                });
+            }
+            else
+            {
+                EndEnemyTurn(); // All enemies finished, return to player turn
+            }
+        }
 
-                enemyIndex++; // Move to next enemy
+        private void EndEnemyTurn()
+        {
+            LogToFile("Enemy turn ended. Switching back to Player Turn.");
+            CurrentTurn = TurnState.PlayerTurn;
+            StartPlayerTurn();
+        }
 
-                if (enemyIndex >= gameManager.Enemies.Count)
-                {
-                    StartPlayerTurn(); // After last enemy, switch back to player
-                }
+        private void LogToFile(string message)
+        {
+            string logPath = "debug_log.txt";
+            using (StreamWriter writer = new StreamWriter(logPath, true))
+            {
+                writer.WriteLine($"{DateTime.Now}: {message}");
             }
         }
     }

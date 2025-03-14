@@ -4,6 +4,7 @@ using Object_Oriented_Map_System.Managers;
 using Object_Oriented_Map_System.MapSystem;
 using Object_Oriented_Map_System.MapSystem.Tiles;
 using System;
+using System.IO;
 
 namespace Object_Oriented_Map_System.Entities
 {
@@ -11,14 +12,11 @@ namespace Object_Oriented_Map_System.Entities
     {
         public Point GridPosition { get; private set; }
         private Vector2 worldPosition;
-        private int health;
-        private bool isStunned;
         private Texture2D texture;
         private Map gameMap;
         private GameManager gameManager;
 
-        public bool IsStunned => isStunned;
-        public bool IsAlive => health > 0;
+        public bool IsAlive { get; private set; } = true;
 
         public Enemy(Texture2D enemyTexture, Point startGridPos, Map map, GameManager manager)
         {
@@ -27,33 +25,34 @@ namespace Object_Oriented_Map_System.Entities
             gameMap = map;
             gameManager = manager;
             worldPosition = new Vector2(GridPosition.X * gameMap.TileWidth, GridPosition.Y * gameMap.TileHeight);
-            health = 3; // Default enemy health
         }
 
-        public void TakeTurn()
+        public void TakeTurn(Action onComplete)
         {
-            if (!IsAlive) return;
-
-            // Find a path to the player (basic pathfinding)
-            Point targetPosition = gameManager.PlayerGridPosition;
-            Point nextStep = FindPathToTarget(targetPosition);
-
-            if (nextStep != GridPosition)
+            if (!IsAlive)
             {
-                GridPosition = nextStep;
-                worldPosition = new Vector2(GridPosition.X * gameMap.TileWidth, GridPosition.Y * gameMap.TileHeight);
+                LogToFile($"Enemy at {GridPosition} is dead and cannot act.");
+                onComplete?.Invoke(); // Ensures the turn system continues even if the enemy is dead
+                return;
             }
-        }
 
-        public void TakeDamage()
-        {
-            health--;
-            isStunned = true;
-        }
+            LogToFile($"ENEMY TURN: Enemy at {GridPosition} is preparing to move...");
 
-        public void RecoverFromStun()
-        {
-            isStunned = false;
+            Point targetPosition = FindPathToTarget(gameManager.PlayerGridPosition);
+
+            if (targetPosition != GridPosition)
+            {
+                GridPosition = targetPosition;
+                worldPosition = new Vector2(GridPosition.X * gameMap.TileWidth, GridPosition.Y * gameMap.TileHeight);
+                LogToFile($"Enemy moved to {GridPosition}");
+            }
+            else
+            {
+                LogToFile($"Enemy at {GridPosition} found no valid move.");
+            }
+
+            // Delay ensures enemies move one by one instead of all at once
+            gameManager.ScheduleDelayedAction(0.3f, onComplete);
         }
 
         private Point FindPathToTarget(Point target)
@@ -63,27 +62,47 @@ namespace Object_Oriented_Map_System.Entities
 
             Point nextStep = GridPosition;
 
-            if (Math.Abs(dx) > Math.Abs(dy)) // Move horizontally
+            // Prioritize horizontal movement
+            if (Math.Abs(dx) > Math.Abs(dy))
             {
                 nextStep = new Point(GridPosition.X + Math.Sign(dx), GridPosition.Y);
             }
-            else // Move vertically
+            else
             {
                 nextStep = new Point(GridPosition.X, GridPosition.Y + Math.Sign(dy));
             }
 
-            // Check if the next step is walkable
+            //  Ensure tile is walkable
             if (gameMap.IsTileWalkable(nextStep))
             {
                 return nextStep;
             }
 
-            return GridPosition; // If blocked, stay in place
+            //  If preferred move is blocked, try the other direction
+            if (Math.Abs(dx) > Math.Abs(dy))
+            {
+                nextStep = new Point(GridPosition.X, GridPosition.Y + Math.Sign(dy));
+            }
+            else
+            {
+                nextStep = new Point(GridPosition.X + Math.Sign(dx), GridPosition.Y);
+            }
+
+            return gameMap.IsTileWalkable(nextStep) ? nextStep : GridPosition;
         }
 
         public void Draw(SpriteBatch spriteBatch)
         {
             spriteBatch.Draw(texture, worldPosition, Color.White);
+        }
+
+        private void LogToFile(string message)
+        {
+            string logPath = "debug_log.txt";
+            using (StreamWriter writer = new StreamWriter(logPath, true))
+            {
+                writer.WriteLine($"{DateTime.Now}: {message}");
+            }
         }
     }
 }

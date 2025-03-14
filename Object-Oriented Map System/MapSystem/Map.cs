@@ -51,6 +51,8 @@ namespace Object_Oriented_Map_System.MapSystem
         {
             Random rand = new Random();
 
+            int walkableTileCount = 0;
+
             // Decide on 2 to 4 exit tiles.
             int exitCount = rand.Next(2, 5);
 
@@ -103,6 +105,7 @@ namespace Object_Oriented_Map_System.MapSystem
                     else
                     {
                         Tiles[row, col] = new WalkableTile(walkableTexture, position);
+                        walkableTileCount++;
                     }
                 }
             }
@@ -110,10 +113,20 @@ namespace Object_Oriented_Map_System.MapSystem
 
         public void LoadMapFromFile(string filename)
         {
+            LogToFile($"Loading pre-made map: {filename}");
+
+            if (!File.Exists(filename))
+            {
+                LogToFile($"ERROR: Map file not found: {filename}");
+                return;
+            }
+
             string[] lines = File.ReadAllLines(filename);
             Rows = lines.Length;
             Columns = lines[0].Length;
-            Tiles = new Tile[Rows, Columns];
+            Tiles = new Tile[Rows, Columns]; // Ensure it's properly initialized
+
+            int walkableTileCount = 0;
 
             for (int row = 0; row < Rows; row++)
             {
@@ -122,13 +135,32 @@ namespace Object_Oriented_Map_System.MapSystem
                     Vector2 position = new Vector2(col * tileWidth, row * tileHeight);
                     char c = lines[row][col];
 
-                    if (c == 'w')
-                        Tiles[row, col] = new WalkableTile(walkableTexture, position);
-                    else if (c == '#')
-                        Tiles[row, col] = new NonWalkableTile(nonWalkableTexture, position);
-                    else if (c == 'E')
-                        Tiles[row, col] = new ExitTile(exitTexture, position);
+                    switch (c)
+                    {
+                        case 'w':
+                            Tiles[row, col] = new WalkableTile(walkableTexture, position);
+                            walkableTileCount++;
+                            break;
+                        case '#':
+                            Tiles[row, col] = new NonWalkableTile(nonWalkableTexture, position);
+                            break;
+                        case 'E':
+                            Tiles[row, col] = new ExitTile(exitTexture, position);
+                            break;
+                        default:
+                            LogToFile($"Unrecognized tile character '{c}' at ({col}, {row}). Defaulting to wall.");
+                            Tiles[row, col] = new NonWalkableTile(nonWalkableTexture, position);
+                            break;
+                    }
                 }
+            }
+
+            LogToFile($"Finished loading map: {filename}");
+            LogToFile($"Total Walkable Tiles: {walkableTileCount}");
+
+            if (walkableTileCount == 0)
+            {
+                LogToFile("ERROR: No walkable tiles found in map!");
             }
         }
 
@@ -137,10 +169,23 @@ namespace Object_Oriented_Map_System.MapSystem
             if (gridPosition.X < 0 || gridPosition.Y < 0 ||
                 gridPosition.X >= Columns || gridPosition.Y >= Rows)
             {
+                LogToFile($"Tile ({gridPosition.X}, {gridPosition.Y}) is OUT OF BOUNDS.");
                 return false;
             }
 
-            return Tiles[gridPosition.Y, gridPosition.X] is WalkableTile;
+            if (Tiles == null)
+            {
+                LogToFile("ERROR: Tiles array is NULL when checking IsTileWalkable.");
+                return false;
+            }
+
+            if (Tiles[gridPosition.Y, gridPosition.X] == null)
+            {
+                LogToFile($"ERROR: Tile at ({gridPosition.X}, {gridPosition.Y}) is NULL.");
+                return false;
+            }
+
+            return Tiles[gridPosition.Y, gridPosition.X] is WalkableTile || Tiles[gridPosition.Y, gridPosition.X] is ExitTile;
         }
 
         public void Draw(SpriteBatch spriteBatch)
@@ -151,6 +196,16 @@ namespace Object_Oriented_Map_System.MapSystem
                 {
                     Tiles[row, col]?.Draw(spriteBatch);
                 }
+            }
+        }
+
+
+        private void LogToFile(string message)
+        {
+            string logPath = "debug_log.txt";
+            using (StreamWriter writer = new StreamWriter(logPath, true))
+            {
+                writer.WriteLine($"{DateTime.Now}: {message}");
             }
         }
     }
