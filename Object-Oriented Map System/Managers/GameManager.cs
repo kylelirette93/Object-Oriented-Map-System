@@ -34,6 +34,7 @@ namespace Object_Oriented_Map_System.Managers
         public TurnManager turnManager { get; private set; }
         public List<Enemy> Enemies { get; private set; } = new List<Enemy>();
         private bool playerCanMove = false; //  Track if player can move
+        private TurnState lastLoggedState = TurnState.PlayerTurn;
 
         private List<(float TimeRemaining, Action Callback)> delayedActions = new List<(float, Action)>();
 
@@ -82,7 +83,7 @@ namespace Object_Oriented_Map_System.Managers
             if (gameMap.Rows > 0 && gameMap.Columns > 0)
             {
                // LogToFile("Spawning enemies AFTER map is confirmed loaded...");
-                SpawnEnemies(3); 
+                SpawnEnemies(2); 
             }
 
             turnManager.StartPlayerTurn();
@@ -95,10 +96,6 @@ namespace Object_Oriented_Map_System.Managers
 
         public void Update(GameTime gameTime)
         {
-            LogToFile($"Current Turn: {turnManager.CurrentTurn}"); // Debugging turn state
-            LogToFile($"IsPlayerTurn() Check: {turnManager.IsPlayerTurn()}");
-            LogToFile($"playerCanMove: {playerCanMove}");
-
             // Process scheduled actions with delays
             for (int i = delayedActions.Count - 1; i >= 0; i--)
             {
@@ -118,18 +115,13 @@ namespace Object_Oriented_Map_System.Managers
 
             KeyboardState currentKeyboardState = Keyboard.GetState();
 
-            //  Player should only move on their turn
+            // Ensure only the player moves during their turn
             if (playerCanMove && turnManager.IsPlayerTurn())
             {
-                LogToFile(" Player Turn Confirmed - Handling Movement...");
                 HandlePlayerTurn(currentKeyboardState);
             }
-            else
-            {
-                LogToFile(" Player input ignored - Not Player's Turn");
-            }
 
-            // Prevent exit until enemies are defeated
+            // Ensure exit only works when all enemies are defeated
             if (gameMap.Tiles[playerGridPosition.Y, playerGridPosition.X] is ExitTile && Enemies.Count == 0)
             {
                 LoadNextMap();
@@ -193,7 +185,7 @@ namespace Object_Oriented_Map_System.Managers
 
             ResetPlayerPosition();
             Enemies.Clear();
-            SpawnEnemies(1);
+            SpawnEnemies(2);
         }
 
         public void HandlePlayerTurn(KeyboardState currentKeyboardState)
@@ -280,8 +272,9 @@ namespace Object_Oriented_Map_System.Managers
                 Point spawnPoint = availableTiles[index];
                 availableTiles.RemoveAt(index);
 
-                Enemies.Add(new Enemy(enemyTexture, spawnPoint, gameMap, this));
-               // LogToFile($"Spawned enemy at {spawnPoint}");
+                var enemy = new Enemy(enemyTexture, spawnPoint, gameMap, this);
+                Enemies.Add(enemy);
+                LogToFile($"Spawned enemy #{i + 1} at {spawnPoint}");
             }
         }
 

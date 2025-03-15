@@ -29,10 +29,16 @@ namespace Object_Oriented_Map_System.Entities
 
         public void TakeTurn(Action onComplete)
         {
+            if (!gameManager.turnManager.IsEnemyTurn())
+            {
+                LogToFile($"ERROR: Enemy at {GridPosition} tried to move outside EnemyTurn!");
+                return;
+            }
+
             if (!IsAlive)
             {
                 LogToFile($"Enemy at {GridPosition} is dead and cannot act.");
-                onComplete?.Invoke(); // Ensures the turn system continues even if the enemy is dead
+                onComplete?.Invoke(); // Ensure the turn system continues
                 return;
             }
 
@@ -51,7 +57,7 @@ namespace Object_Oriented_Map_System.Entities
                 LogToFile($"Enemy at {GridPosition} found no valid move.");
             }
 
-            // Delay ensures enemies move one by one instead of all at once
+            // Delay ensures enemies move one by one
             gameManager.ScheduleDelayedAction(0.3f, onComplete);
         }
 

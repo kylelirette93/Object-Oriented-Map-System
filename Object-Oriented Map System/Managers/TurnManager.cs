@@ -24,49 +24,90 @@ namespace Object_Oriented_Map_System.Managers
             CurrentTurn = TurnState.PlayerTurn; // Start with player turn
         }
 
-        public void StartPlayerTurn() 
+        // ---------------------------- PLAYER TURN MANAGEMENT ----------------------------
+
+        public void StartPlayerTurn()
         {
             LogToFile("Starting Player Turn...");
             CurrentTurn = TurnState.PlayerTurn;
             gameManager.SetPlayerCanMove(true);
         }
 
-        public bool IsPlayerTurn()
-        {
-            return CurrentTurn == TurnState.PlayerTurn;
-        }
-
         public void EndPlayerTurn()
         {
             LogToFile("Player turn ended. Switching to Enemy Turn.");
+            gameManager.SetPlayerCanMove(false);
             CurrentTurn = TurnState.EnemyTurn;
-            currentEnemyIndex = 0;
-            StartEnemyTurn();
+
+            if (gameManager.Enemies.Count == 0)
+            {
+                LogToFile("No enemies to process. Returning to Player Turn.");
+                EndEnemyTurn();
+                return;
+            }
+
+            ProcessNextEnemy(0); 
         }
+
+        public bool IsPlayerTurn() => CurrentTurn == TurnState.PlayerTurn;
+        public bool IsEnemyTurn() => CurrentTurn == TurnState.EnemyTurn;
+
+        // ---------------------------- ENEMY TURN MANAGEMENT ----------------------------
 
         private void StartEnemyTurn()
         {
             LogToFile("Enemy turn started. Processing enemy actions...");
 
-            ProcessNextEnemy(0); // Start enemy actions, ensuring they move in sequence
+            if (gameManager.Enemies.Count == 0)
+            {
+                LogToFile("No enemies to process. Returning to Player Turn.");
+                EndEnemyTurn();
+                return;
+            }
+
+            LogToFile($"Total enemies in turn order: {gameManager.Enemies.Count}");
+            ProcessNextEnemy(0); // Begin enemy turns sequentially
         }
 
         private void ProcessNextEnemy(int index)
         {
-            if (index < gameManager.Enemies.Count)
+            if (index >= gameManager.Enemies.Count)
             {
-                Enemy enemy = gameManager.Enemies[index];
-                LogToFile($"Processing turn for Enemy at {enemy.GridPosition}...");
+                LogToFile("All enemies have moved. Switching back to Player Turn.");
+                EndEnemyTurn();
+                return;
+            }
 
-                // Enemy takes turn, then we process the next enemy after a delay
+            // Ensure we are only processing enemies during EnemyTurn
+            if (CurrentTurn != TurnState.EnemyTurn)
+            {
+                LogToFile($"ERROR: Attempting to process enemy {index} while not in EnemyTurn!");
+                return;
+            }
+
+            // Get enemy reference
+            Enemy enemy = gameManager.Enemies[index];
+
+            // Ensure enemy does NOT move on PlayerTurn
+            if (gameManager.turnManager.IsPlayerTurn())
+            {
+                LogToFile($"ERROR: Enemy {index} tried to move during Player Turn! Aborting.");
+                return;
+            }
+
+            LogToFile($"Processing turn for Enemy at {enemy.GridPosition}...");
+
+            if (IsEnemyTurn())
+            {
                 enemy.TakeTurn(() =>
                 {
-                    ProcessNextEnemy(index + 1);
+                    LogToFile($"Enemy at {enemy.GridPosition} finished move. Processing next enemy...");
+                    gameManager.ScheduleDelayedAction(0.5f, () => ProcessNextEnemy(index + 1));
                 });
             }
             else
             {
-                EndEnemyTurn(); // All enemies finished, return to player turn
+                LogToFile($"ERROR: Tried to process enemy {index} outside EnemyTurn!");
             }
         }
 
@@ -76,6 +117,8 @@ namespace Object_Oriented_Map_System.Managers
             CurrentTurn = TurnState.PlayerTurn;
             StartPlayerTurn();
         }
+
+        // ----------------------------  LOGGING FOR DEBUGGING ----------------------------
 
         private void LogToFile(string message)
         {
