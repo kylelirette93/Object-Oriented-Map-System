@@ -2,7 +2,9 @@
 This is a 2D RPG-like game I'm making in monogame. 
 
 ## Sprint 2 Changes and Messages
-Add this section as well as comments before you submit.
+With this sprint we added a couple new things to the project, being basic enemies, a turn-based movement system, a health and combat system as well as more obstacles generating in our maps.   The enemy class is used for handling basic enemies which we can extend to create variants later on if we want. It initializes the enemies health
+as well as methods for taking damage and what happens when their health hits 0. It also has basic tracking to allow the enemies to find the player easily without getting stuck. The turn manager handles everything related to the players/enemies turns during gameplay. It starts by initializing a turnstate as well as starting the game with the players turn first.
+It then handles all starting and ending of turns for both players and enemies as well as a method to process enemy turns when more than 1 is in the scene.  The health component is a simple script that both players and enemies can reference to set their health as well as a simple method for taking damage when attacked. We've also updated the map script to handle generating different sized obstacle clusters into the map to make it look better and feel fuller. Thje obstacles are designed to avoid exit doors so ytou never get softlocked as well as making sure you can complete the stage and nothing is blocked off. We had a few new changes to the game manager as well, mostly with handling enemy spawns within the game as well as handling the removal of them from the scene when they die. Other minor changes include damage indicators above the player and enemy heads when they get attacked as well as the enemies get flipped upside down when they are stunned.
 
 ## Sprint 1 Changes and Messages
 
