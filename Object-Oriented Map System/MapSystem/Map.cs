@@ -29,6 +29,8 @@ namespace Object_Oriented_Map_System.MapSystem
         private Texture2D exitTexture;
         public Texture2D openExitTexture;
 
+        public Point SpawnPoint { get; private set; }
+
         public Map(int rows, int columns)
         {
             Rows = rows;
@@ -109,6 +111,175 @@ namespace Object_Oriented_Map_System.MapSystem
                     }
                 }
             }
+
+            // Find a valid walkable tile for the spawn point AFTER map is generated
+            List<Point> walkableTiles = new List<Point>();
+            for (int row = 1; row < Rows - 1; row++)
+            {
+                for (int col = 1; col < Columns - 1; col++)
+                {
+                    if (Tiles[row, col] is WalkableTile)
+                        walkableTiles.Add(new Point(col, row));
+                }
+            }
+
+            if (walkableTiles.Count > 0)
+            {
+                SpawnPoint = walkableTiles[rand.Next(walkableTiles.Count)];
+            }
+
+            GenerateObstacles(exitPositions);
+
+            // Ensure a valid path exists between the spawn point and at least one exit
+            if (!ValidatePathExists())
+            {
+                LogToFile("Invalid map generated! Retrying full map generation...");
+                GenerateRandomMap(); // Regenerate the entire map if it's invalid
+                return;
+            }
+        }
+
+        private void GenerateObstacles(List<Point> exitPositions)
+        {
+            Random rand = new Random();
+            List<Rectangle> placedObstacles = new List<Rectangle>(); // Track placed obstacles
+            int numClusters = rand.Next(3, 6); // Randomize number of obstacle clusters
+            int attempts = 0;
+
+            for (int i = 0; i < numClusters; i++)
+            {
+                if (attempts > 100) break; // Prevent infinite loops if placement fails
+
+                int width = rand.Next(2, 5); // Cluster width: 2 to 4 tiles
+                int height = rand.Next(2, 5); // Cluster height: 2 to 4 tiles
+
+                int x, y;
+                bool validPlacement;
+
+                do
+                {
+                    x = rand.Next(1, Columns - width - 1);
+                    y = rand.Next(1, Rows - height - 1);
+
+                    Rectangle newCluster = new Rectangle(x, y, width, height);
+                    validPlacement = true;
+
+                    // Ensure no obstacles touch each other
+                    foreach (Rectangle existing in placedObstacles)
+                    {
+                        if (newCluster.Intersects(existing) || newCluster.Intersects(new Rectangle(existing.X - 1, existing.Y - 1, existing.Width + 2, existing.Height + 2)))
+                        {
+                            validPlacement = false;
+                            break;
+                        }
+                    }
+
+                    // **Ensure obstacle does NOT cover spawn or exits**
+                    if (validPlacement && (newCluster.Contains(SpawnPoint) || exitPositions.Exists(p => newCluster.Contains(p))))
+                    {
+                        validPlacement = false;
+                    }
+
+                    attempts++;
+
+                } while (!validPlacement && attempts < 100);
+
+                // If valid, place obstacle and track it
+                if (validPlacement)
+                {
+                    for (int row = y; row < y + height; row++)
+                    {
+                        for (int col = x; col < x + width; col++)
+                        {
+                            Tiles[row, col] = new NonWalkableTile(nonWalkableTexture, new Vector2(col * tileWidth, row * tileHeight));
+                        }
+                    }
+
+                    placedObstacles.Add(new Rectangle(x, y, width, height));
+                }
+            }
+
+            LogToFile($"Obstacle clusters placed: {placedObstacles.Count}");
+        }
+
+        private bool ValidatePathExists()
+        {
+            HashSet<Point> visited = new HashSet<Point>();
+            Queue<Point> queue = new Queue<Point>();
+
+            queue.Enqueue(SpawnPoint);
+            visited.Add(SpawnPoint);
+
+            while (queue.Count > 0)
+            {
+                Point current = queue.Dequeue();
+
+                // If we reach any exit position, the path is valid
+                if (Tiles[current.Y, current.X] is ExitTile)
+                    return true;
+
+                foreach (var neighbor in GetWalkableNeighbors(current))
+                {
+                    if (!visited.Contains(neighbor))
+                    {
+                        visited.Add(neighbor);
+                        queue.Enqueue(neighbor);
+                    }
+                }
+            }
+
+            return false; // No valid path found
+        }
+
+        private bool IsClusterPlacementValid(int startX, int startY, int width, int height)
+        {
+            for (int x = startX; x < startX + width; x++)
+            {
+                for (int y = startY; y < startY + height; y++)
+                {
+                    if (Tiles[y, x] is ExitTile)
+                    {
+                        return false; // Don't block exits
+                    }
+                }
+            }
+
+            return ValidatePathExists(); // Ensure the path from spawn to exit still exists
+        }
+
+        private int CountWalkableTiles()
+        {
+            int count = 0;
+            foreach (var tile in Tiles)
+            {
+                if (tile is WalkableTile || tile is ExitTile)
+                    count++;
+            }
+            return count;
+        }
+
+        private List<Point> GetWalkableNeighbors(Point current)
+        {
+            List<Point> neighbors = new List<Point>();
+
+            Point[] directions = new Point[]
+            {
+                new Point(0, -1), // Up
+                new Point(1, 0),  // Right
+                new Point(0, 1),  // Down
+                new Point(-1, 0)  // Left
+            };
+
+            foreach (var dir in directions)
+            {
+                Point neighbor = new Point(current.X + dir.X, current.Y + dir.Y);
+                if (IsTileWalkable(neighbor))
+                {
+                    neighbors.Add(neighbor);
+                }
+            }
+
+            return neighbors;
         }
 
         public void LoadMapFromFile(string filename)

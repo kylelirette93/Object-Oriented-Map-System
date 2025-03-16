@@ -258,7 +258,8 @@ namespace Object_Oriented_Map_System.Managers
 
                 if (enemyAtTarget != null)
                 {
-                    enemyAtTarget.TakeDamage(1);
+                    int damage = 1;
+                    enemyAtTarget.TakeDamage(damage);
                     LogToFile($"Player attacked enemy at {targetPosition}!");
 
                     Vector2 damagePosition = new Vector2(
@@ -266,7 +267,7 @@ namespace Object_Oriented_Map_System.Managers
                             enemyAtTarget.GridPosition.Y * gameMap.TileHeight
                             );
 
-                    damageTexts.Add(new DamageText("-1", damagePosition, damageFont));
+                    AddDamageText($"-{damage}", damagePosition);
 
                     // If enemy died, remove it from list immediately
                     if (!enemyAtTarget.IsAlive)
@@ -305,7 +306,7 @@ namespace Object_Oriented_Map_System.Managers
         public void PlayerTakeDamage(int damage)
         {
             PlayerHealth.TakeDamage(damage);
-            LogToFile($"Player took {damage} damage! Health: {PlayerHealth.CurrentHealth}");
+            LogToFile($"Player took {damage} damage! Health: {PlayerHealth.CurrentHealth}");          
 
             if (!PlayerHealth.IsAlive)
             {
@@ -357,9 +358,7 @@ namespace Object_Oriented_Map_System.Managers
 
         private void ResetPlayerPosition()
         {
-            int startCol = gameMap.Columns / 2;
-            int startRow = gameMap.Rows / 2;
-            playerGridPosition = new Point(startCol, startRow);
+            playerGridPosition = gameMap.SpawnPoint; // Use the correct spawn point
             playerPosition = new Vector2(
                 playerGridPosition.X * gameMap.TileWidth + gameMap.TileWidth / 2,
                 playerGridPosition.Y * gameMap.TileHeight + gameMap.TileHeight / 2);
@@ -374,7 +373,7 @@ namespace Object_Oriented_Map_System.Managers
             {
                 for (int col = 0; col < gameMap.Columns; col++)
                 {
-                    if (gameMap.IsTileWalkable(new Point(col, row)) && new Point(col, row) != playerGridPosition)
+                    if (gameMap.IsTileWalkable(new Point(col, row)) && new Point(col, row) != gameMap.SpawnPoint)
                     {
                         availableTiles.Add(new Point(col, row));
                     }

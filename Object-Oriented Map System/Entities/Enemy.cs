@@ -44,28 +44,34 @@ namespace Object_Oriented_Map_System.Entities
 
             if (!IsAlive)
             {
-                LogToFile($"Enemy at {GridPosition} is dead and cannot act.");
+                //LogToFile($"Enemy at {GridPosition} is dead and cannot act.");
                 onComplete?.Invoke();
                 return;
             }
 
             if (IsStunned)
             {
-                LogToFile($"Enemy at {GridPosition} is stunned and skips turn.");
+                //LogToFile($"Enemy at {GridPosition} is stunned and skips turn.");
                 IsStunned = false;
                 onComplete?.Invoke();
                 return;
             }
             isFlipped = false;
 
-            LogToFile($"ENEMY TURN: Enemy at {GridPosition} is preparing to move...");
+            //LogToFile($"ENEMY TURN: Enemy at {GridPosition} is preparing to move...");
 
             Point targetPosition = FindPathToTarget(gameManager.PlayerGridPosition);
 
             if (targetPosition == gameManager.PlayerGridPosition)
             {
-                gameManager.PlayerHealth.TakeDamage(1);
-                LogToFile($"Enemy at {GridPosition} attacked the player! Player Health: {gameManager.PlayerHealth.CurrentHealth}");
+                int damage = 1;
+                gameManager.PlayerHealth.TakeDamage(damage);
+
+                Vector2 damagePosition = new Vector2(
+                    gameManager.PlayerGridPosition.X * gameMap.TileWidth + gameMap.TileWidth / 2,
+                    gameManager.PlayerGridPosition.Y * gameMap.TileHeight - 10  // Slight offset above the player
+                );
+                gameManager.AddDamageText($"-{damage}", damagePosition);
 
                 gameManager.ScheduleDelayedAction(0.3f, onComplete);
                 return;
@@ -75,11 +81,6 @@ namespace Object_Oriented_Map_System.Entities
             {
                 GridPosition = targetPosition;
                 worldPosition = new Vector2(GridPosition.X * gameMap.TileWidth, GridPosition.Y * gameMap.TileHeight);
-                LogToFile($"Enemy moved to {GridPosition}");
-            }
-            else
-            {
-                LogToFile($"Enemy at {GridPosition} found no valid move.");
             }
 
             gameManager.ScheduleDelayedAction(0.3f, onComplete);
@@ -90,18 +91,13 @@ namespace Object_Oriented_Map_System.Entities
             if (!IsAlive) return;
 
             Health.TakeDamage(damage);
-            LogToFile($"Enemy at {GridPosition} took {damage} damage! Health: {Health.CurrentHealth}");
 
             Vector2 damageTextPosition = new Vector2(GridPosition.X * gameMap.TileWidth, GridPosition.Y * gameMap.TileHeight);
-
-            // Add floating damage number
-            gameManager.AddDamageText(damage.ToString(), damageTextPosition);
 
             if (Health.IsAlive)
             {
                 IsStunned = true; // Enemy gets stunned for next turn
-                isFlipped = true; //flip enemy upside down when stunned
-                LogToFile($"Enemy at {GridPosition} is stunned and will skip its next turn!");
+                isFlipped = true; //flip enemy upside down when stunned              
             }
         }
 
@@ -124,18 +120,29 @@ namespace Object_Oriented_Map_System.Entities
             int dx = target.X - GridPosition.X;
             int dy = target.Y - GridPosition.Y;
 
-            Point nextStep = GridPosition;
+            // Determine whether to move horizontally or vertically first
+            bool prioritizeHorizontal = Math.Abs(dx) > Math.Abs(dy);
 
-            if (Math.Abs(dx) > Math.Abs(dy))
-            {
-                nextStep = new Point(GridPosition.X + Math.Sign(dx), GridPosition.Y);
-            }
-            else
-            {
-                nextStep = new Point(GridPosition.X, GridPosition.Y + Math.Sign(dy));
-            }
+            Point primaryMove = prioritizeHorizontal
+                ? new Point(GridPosition.X + Math.Sign(dx), GridPosition.Y)  // Prioritize horizontal
+                : new Point(GridPosition.X, GridPosition.Y + Math.Sign(dy)); // Prioritize vertical
 
-            return gameMap.IsTileWalkable(nextStep) ? nextStep : GridPosition;
+            Point secondaryMove = prioritizeHorizontal
+                ? new Point(GridPosition.X, GridPosition.Y + Math.Sign(dy))  // Secondary is vertical
+                : new Point(GridPosition.X + Math.Sign(dx), GridPosition.Y); // Secondary is horizontal
+
+            // Try the best option first
+            if (gameMap.IsTileWalkable(primaryMove)) return primaryMove;
+            if (gameMap.IsTileWalkable(secondaryMove)) return secondaryMove;
+
+            // If all else fails, try moving in the opposite directions
+            Point oppositeHorizontal = new Point(GridPosition.X - Math.Sign(dx), GridPosition.Y);
+            Point oppositeVertical = new Point(GridPosition.X, GridPosition.Y - Math.Sign(dy));
+
+            if (gameMap.IsTileWalkable(oppositeHorizontal)) return oppositeHorizontal;
+            if (gameMap.IsTileWalkable(oppositeVertical)) return oppositeVertical;
+
+            return GridPosition; // Stay in place if no valid move found
         }
 
         public void Draw(SpriteBatch spriteBatch)
