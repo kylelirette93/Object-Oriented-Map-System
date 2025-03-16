@@ -82,8 +82,7 @@ namespace Object_Oriented_Map_System.Managers
             //  Ensure map is fully loaded before spawning enemies
             if (gameMap.Rows > 0 && gameMap.Columns > 0)
             {
-               // LogToFile("Spawning enemies AFTER map is confirmed loaded...");
-                SpawnEnemies(2); 
+                SpawnEnemies(0); 
             }
 
             turnManager.StartPlayerTurn();
@@ -126,6 +125,8 @@ namespace Object_Oriented_Map_System.Managers
             {
                 LoadNextMap();
             }
+
+            CheckExitTile();
 
             previousKeyboardState = currentKeyboardState;
         }
@@ -213,8 +214,6 @@ namespace Object_Oriented_Map_System.Managers
                         playerGridPosition.Y * gameMap.TileHeight + gameMap.TileHeight / 2
                     );
 
-                   // LogToFile($"Player moved to {playerGridPosition}");
-
                     // End the turn AFTER movement
                     turnManager.EndPlayerTurn();
                 }
@@ -224,7 +223,7 @@ namespace Object_Oriented_Map_System.Managers
         public void SetPlayerCanMove(bool canMove)
         {
             playerCanMove = canMove;
-            LogToFile($"playerCanMove set to: {playerCanMove}");
+            //LogToFile($"playerCanMove set to: {playerCanMove}");
         }
 
         private bool IsCellAccessible(int col, int row)
@@ -238,6 +237,30 @@ namespace Object_Oriented_Map_System.Managers
             if (destinationTile is ExitTile) return false;
 
             return destinationTile != null && destinationTile.Walkable;
+        }
+
+        public void CheckExitTile()
+        {
+            if (Enemies.Count == 0)
+            {
+                ReplaceExitTile();
+            }
+        }
+
+        private void ReplaceExitTile()
+        {
+            for (int row = 0; row < gameMap.Rows; row++)
+            {
+                for (int col = 0; col < gameMap.Columns; col++)
+                {
+                    if (gameMap.Tiles[row, col] is ExitTile)
+                    {
+                        Vector2 tilePosition = gameMap.Tiles[row, col].Position;
+                        gameMap.Tiles[row, col] = new OpenExitTile(openExitTexture, tilePosition);
+                        LogToFile($"Exit tile at {col}, {row} changed to OpenExitTile.");
+                    }
+                }
+            }
         }
 
         private void ResetPlayerPosition()
@@ -274,7 +297,7 @@ namespace Object_Oriented_Map_System.Managers
 
                 var enemy = new Enemy(enemyTexture, spawnPoint, gameMap, this);
                 Enemies.Add(enemy);
-                LogToFile($"Spawned enemy #{i + 1} at {spawnPoint}");
+                //LogToFile($"Spawned enemy #{i + 1} at {spawnPoint}");
             }
         }
 

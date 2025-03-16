@@ -57,6 +57,11 @@ namespace Object_Oriented_Map_System.Entities
                 LogToFile($"Enemy at {GridPosition} found no valid move.");
             }
 
+            if (!IsAlive)
+            {
+                Die();
+            }
+
             // Delay ensures enemies move one by one
             gameManager.ScheduleDelayedAction(0.3f, onComplete);
         }
@@ -95,6 +100,16 @@ namespace Object_Oriented_Map_System.Entities
             }
 
             return gameMap.IsTileWalkable(nextStep) ? nextStep : GridPosition;
+        }
+
+        public void Die()
+        {
+            if (!IsAlive) return;
+
+            IsAlive = false;
+            gameManager.Enemies.Remove(this);
+            gameManager.CheckExitTile(); // Open the exit if no enemies remain
+            LogToFile($"Enemy at {GridPosition} died. Checking for open exit.");
         }
 
         public void Draw(SpriteBatch spriteBatch)

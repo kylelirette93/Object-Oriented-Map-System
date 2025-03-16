@@ -99,6 +99,14 @@ namespace Object_Oriented_Map_System.Managers
 
             if (IsEnemyTurn())
             {
+                // If the enemy is already dead, skip its turn
+                if (!enemy.IsAlive)
+                {
+                    LogToFile($"Skipping dead enemy at {enemy.GridPosition}.");
+                    gameManager.ScheduleDelayedAction(0.5f, () => ProcessNextEnemy(index + 1));
+                    return;
+                }
+
                 enemy.TakeTurn(() =>
                 {
                     LogToFile($"Enemy at {enemy.GridPosition} finished move. Processing next enemy...");
