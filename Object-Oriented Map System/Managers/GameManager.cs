@@ -234,7 +234,7 @@ namespace Object_Oriented_Map_System.Managers
 
             ResetPlayerPosition();
             Enemies.Clear();
-            SpawnEnemies(1);
+            SpawnEnemies(2);
         }
 
         public void HandlePlayerTurn(KeyboardState currentKeyboardState)
@@ -300,7 +300,6 @@ namespace Object_Oriented_Map_System.Managers
         private void HandlePlayerDeath()
         {
             LogToFile("Player has died! Game Over.");
-            // Implement game over logic - if we do this it's ready to go
         }
 
         public void PlayerTakeDamage(int damage)
