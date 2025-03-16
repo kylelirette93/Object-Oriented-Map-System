@@ -1,3 +1,11 @@
+# Monogame Sprint Log
+This is a 2D RPG-like game I'm making in monogame. 
+
+## Sprint 2 Changes and Messages
+Add this section as well as comments before you submit.
+
+## Sprint 1 Changes and Messages
+
 For the project I split everything up into multiple scripts that all handle different things to make it easier to work with as well as following OOP principles.
 For the game we have scripts for the Game, Game Manager, Tile, scripts for the 3 current tiles (walkable, non walkable and exit) and then a script for the map.
 
