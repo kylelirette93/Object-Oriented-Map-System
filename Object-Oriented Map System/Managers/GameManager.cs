@@ -26,6 +26,9 @@ namespace Object_Oriented_Map_System.Managers
         private Point playerGridPosition;
         private KeyboardState previousKeyboardState;
 
+        private SpriteFont damageFont;
+        private List<DamageText> damageTexts = new List<DamageText>();
+
         private List<string> premadeMapFiles = new List<string>();
         private int currentPremadeMapIndex = 0;
         private const int requiredRows = 10;
@@ -33,8 +36,10 @@ namespace Object_Oriented_Map_System.Managers
 
         public TurnManager turnManager { get; private set; }
         public List<Enemy> Enemies { get; private set; } = new List<Enemy>();
+        private List<Enemy> enemiesToRemove = new List<Enemy>(); // New list to track dead enemies
         private bool playerCanMove = false; //  Track if player can move
         private TurnState lastLoggedState = TurnState.PlayerTurn;
+        public HealthComponent PlayerHealth { get; private set; }
 
         private List<(float TimeRemaining, Action Callback)> delayedActions = new List<(float, Action)>();
 
@@ -47,6 +52,10 @@ namespace Object_Oriented_Map_System.Managers
             gameMap = new Map(requiredRows, requiredColumns);
             previousKeyboardState = Keyboard.GetState();
             turnManager = new TurnManager(this);
+
+            PlayerHealth = new HealthComponent(5); // Set player health to 5
+            PlayerHealth.OnHealthChanged += () => LogToFile($"Player took damage. Health: {PlayerHealth.CurrentHealth}");
+            PlayerHealth.OnDeath += HandlePlayerDeath;
         }
 
         public void LoadContent()
@@ -54,6 +63,7 @@ namespace Object_Oriented_Map_System.Managers
             playerTexture = _content.Load<Texture2D>("player");
             enemyTexture = _content.Load<Texture2D>("rat");
             openExitTexture = _content.Load<Texture2D>("OpenExitTile");
+            damageFont = _content.Load<SpriteFont>("DamageFont");
             gameMap.LoadContent(_content);
 
             // Load maps
@@ -82,7 +92,7 @@ namespace Object_Oriented_Map_System.Managers
             //  Ensure map is fully loaded before spawning enemies
             if (gameMap.Rows > 0 && gameMap.Columns > 0)
             {
-                SpawnEnemies(0); 
+                SpawnEnemies(1); 
             }
 
             turnManager.StartPlayerTurn();
@@ -93,8 +103,32 @@ namespace Object_Oriented_Map_System.Managers
             delayedActions.Add((delay, action));
         }
 
+        public void QueueEnemyForRemoval(Enemy enemy)
+        {
+            if (!enemiesToRemove.Contains(enemy))
+            {
+                enemiesToRemove.Add(enemy);
+            }
+        }
+
+        private void RemoveQueuedEnemies()
+        {
+            if (enemiesToRemove.Count > 0)
+            {
+                foreach (var enemy in enemiesToRemove)
+                {
+                    Enemies.Remove(enemy);
+                    LogToFile($"Removed enemy at {enemy.GridPosition}.");
+                }
+                enemiesToRemove.Clear(); // Clear the queue after processing
+                CheckExitTile(); // Ensure exit updates after enemy removal
+            }
+        }
+
         public void Update(GameTime gameTime)
         {
+            RemoveQueuedEnemies();
+
             // Process scheduled actions with delays
             for (int i = delayedActions.Count - 1; i >= 0; i--)
             {
@@ -112,6 +146,15 @@ namespace Object_Oriented_Map_System.Managers
                 }
             }
 
+            for (int i = damageTexts.Count - 1; i >= 0; i--)
+            {
+                damageTexts[i].Update(gameTime);
+                if (damageTexts[i].IsExpired)
+                {
+                    damageTexts.RemoveAt(i);
+                }
+            }
+
             KeyboardState currentKeyboardState = Keyboard.GetState();
 
             // Ensure only the player moves during their turn
@@ -126,7 +169,7 @@ namespace Object_Oriented_Map_System.Managers
                 LoadNextMap();
             }
 
-            CheckExitTile();
+            CheckExitTile();       
 
             previousKeyboardState = currentKeyboardState;
         }
@@ -149,6 +192,11 @@ namespace Object_Oriented_Map_System.Managers
             foreach (var enemy in Enemies)
             {
                 enemy.Draw(spriteBatch);
+            }
+
+            foreach (var damageText in damageTexts)
+            {
+                damageText.Draw(spriteBatch);
             }
 
             spriteBatch.Draw(playerTexture, playerPosition, null, Color.White, 0f,
@@ -186,7 +234,7 @@ namespace Object_Oriented_Map_System.Managers
 
             ResetPlayerPosition();
             Enemies.Clear();
-            SpawnEnemies(2);
+            SpawnEnemies(1);
         }
 
         public void HandlePlayerTurn(KeyboardState currentKeyboardState)
@@ -206,24 +254,69 @@ namespace Object_Oriented_Map_System.Managers
 
             if (targetPosition != playerGridPosition)
             {
-                if (IsCellAccessible(targetPosition.X, targetPosition.Y))
+                Enemy enemyAtTarget = Enemies.FirstOrDefault(e => e.GridPosition == targetPosition && e.IsAlive);
+
+                if (enemyAtTarget != null)
                 {
+                    enemyAtTarget.TakeDamage(1);
+                    LogToFile($"Player attacked enemy at {targetPosition}!");
+
+                    Vector2 damagePosition = new Vector2(
+                            enemyAtTarget.GridPosition.X * gameMap.TileWidth + gameMap.TileWidth / 2,
+                            enemyAtTarget.GridPosition.Y * gameMap.TileHeight
+                            );
+
+                    damageTexts.Add(new DamageText("-1", damagePosition, damageFont));
+
+                    // If enemy died, remove it from list immediately
+                    if (!enemyAtTarget.IsAlive)
+                    {
+                        Enemies.Remove(enemyAtTarget);
+                        CheckExitTile(); // Ensure the exit updates
+                    }
+
+                    turnManager.EndPlayerTurn();
+                }
+                else if (IsCellAccessible(targetPosition.X, targetPosition.Y))
+                {
+                    // Move only if no enemy is present
                     playerGridPosition = targetPosition;
                     playerPosition = new Vector2(
                         playerGridPosition.X * gameMap.TileWidth + gameMap.TileWidth / 2,
                         playerGridPosition.Y * gameMap.TileHeight + gameMap.TileHeight / 2
                     );
 
-                    // End the turn AFTER movement
-                    turnManager.EndPlayerTurn();
+                    turnManager.EndPlayerTurn(); // End turn after movement
                 }
+            }
+        }
+
+        public void AddDamageText(string text, Vector2 position)
+        {
+            damageTexts.Add(new DamageText(text, position, damageFont));
+        }
+
+        private void HandlePlayerDeath()
+        {
+            LogToFile("Player has died! Game Over.");
+            // Implement game over logic - if we do this it's ready to go
+        }
+
+        public void PlayerTakeDamage(int damage)
+        {
+            PlayerHealth.TakeDamage(damage);
+            LogToFile($"Player took {damage} damage! Health: {PlayerHealth.CurrentHealth}");
+
+            if (!PlayerHealth.IsAlive)
+            {
+                LogToFile("Player has died. Game Over.");
+                HandlePlayerDeath();
             }
         }
 
         public void SetPlayerCanMove(bool canMove)
         {
             playerCanMove = canMove;
-            //LogToFile($"playerCanMove set to: {playerCanMove}");
         }
 
         private bool IsCellAccessible(int col, int row)
@@ -257,7 +350,6 @@ namespace Object_Oriented_Map_System.Managers
                     {
                         Vector2 tilePosition = gameMap.Tiles[row, col].Position;
                         gameMap.Tiles[row, col] = new OpenExitTile(openExitTexture, tilePosition);
-                        LogToFile($"Exit tile at {col}, {row} changed to OpenExitTile.");
                     }
                 }
             }
@@ -298,6 +390,14 @@ namespace Object_Oriented_Map_System.Managers
                 var enemy = new Enemy(enemyTexture, spawnPoint, gameMap, this);
                 Enemies.Add(enemy);
                 //LogToFile($"Spawned enemy #{i + 1} at {spawnPoint}");
+            }
+        }
+
+        public void MarkEnemyForRemoval(Enemy enemy)
+        {
+            if (!enemiesToRemove.Contains(enemy))
+            {
+                enemiesToRemove.Add(enemy);
             }
         }
 

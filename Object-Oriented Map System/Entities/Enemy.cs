@@ -16,7 +16,10 @@ namespace Object_Oriented_Map_System.Entities
         private Map gameMap;
         private GameManager gameManager;
 
-        public bool IsAlive { get; private set; } = true;
+        public HealthComponent Health { get; private set; } // Enemy Health System
+        public bool IsAlive => Health.IsAlive; // Check if enemy is alive
+        public bool IsStunned { get; private set; } = false; // Enemy Stun Mechanic
+        private bool isFlipped = false;
 
         public Enemy(Texture2D enemyTexture, Point startGridPos, Map map, GameManager manager)
         {
@@ -25,26 +28,48 @@ namespace Object_Oriented_Map_System.Entities
             gameMap = map;
             gameManager = manager;
             worldPosition = new Vector2(GridPosition.X * gameMap.TileWidth, GridPosition.Y * gameMap.TileHeight);
+
+            Health = new HealthComponent(2); // Enemy starts with 2 health
+            Health.OnHealthChanged += () => LogToFile($"Enemy at {GridPosition} took damage. Health: {Health.CurrentHealth}");
+            Health.OnDeath += Die;
         }
 
         public void TakeTurn(Action onComplete)
         {
             if (!gameManager.turnManager.IsEnemyTurn())
             {
-                LogToFile($"ERROR: Enemy at {GridPosition} tried to move outside EnemyTurn!");
+               // LogToFile($"ERROR: Enemy at {GridPosition} tried to move outside EnemyTurn!");
                 return;
             }
 
             if (!IsAlive)
             {
                 LogToFile($"Enemy at {GridPosition} is dead and cannot act.");
-                onComplete?.Invoke(); // Ensure the turn system continues
+                onComplete?.Invoke();
                 return;
             }
+
+            if (IsStunned)
+            {
+                LogToFile($"Enemy at {GridPosition} is stunned and skips turn.");
+                IsStunned = false;
+                onComplete?.Invoke();
+                return;
+            }
+            isFlipped = false;
 
             LogToFile($"ENEMY TURN: Enemy at {GridPosition} is preparing to move...");
 
             Point targetPosition = FindPathToTarget(gameManager.PlayerGridPosition);
+
+            if (targetPosition == gameManager.PlayerGridPosition)
+            {
+                gameManager.PlayerHealth.TakeDamage(1);
+                LogToFile($"Enemy at {GridPosition} attacked the player! Player Health: {gameManager.PlayerHealth.CurrentHealth}");
+
+                gameManager.ScheduleDelayedAction(0.3f, onComplete);
+                return;
+            }
 
             if (targetPosition != GridPosition)
             {
@@ -57,14 +82,42 @@ namespace Object_Oriented_Map_System.Entities
                 LogToFile($"Enemy at {GridPosition} found no valid move.");
             }
 
-            if (!IsAlive)
-            {
-                Die();
-            }
-
-            // Delay ensures enemies move one by one
             gameManager.ScheduleDelayedAction(0.3f, onComplete);
         }
+
+        public void TakeDamage(int damage)
+        {
+            if (!IsAlive) return;
+
+            Health.TakeDamage(damage);
+            LogToFile($"Enemy at {GridPosition} took {damage} damage! Health: {Health.CurrentHealth}");
+
+            Vector2 damageTextPosition = new Vector2(GridPosition.X * gameMap.TileWidth, GridPosition.Y * gameMap.TileHeight);
+
+            // Add floating damage number
+            gameManager.AddDamageText(damage.ToString(), damageTextPosition);
+
+            if (Health.IsAlive)
+            {
+                IsStunned = true; // Enemy gets stunned for next turn
+                isFlipped = true; //flip enemy upside down when stunned
+                LogToFile($"Enemy at {GridPosition} is stunned and will skip its next turn!");
+            }
+        }
+
+        public void Die()
+        {
+            if (!IsAlive) return;
+
+            LogToFile($"Enemy at {GridPosition} has died.");
+
+            // Remove from the game logic immediately
+            gameManager.Enemies.Remove(this);
+
+            // Check if the exit should open after enemy removal
+            gameManager.CheckExitTile();
+        }
+
 
         private Point FindPathToTarget(Point target)
         {
@@ -73,7 +126,6 @@ namespace Object_Oriented_Map_System.Entities
 
             Point nextStep = GridPosition;
 
-            // Prioritize horizontal movement
             if (Math.Abs(dx) > Math.Abs(dy))
             {
                 nextStep = new Point(GridPosition.X + Math.Sign(dx), GridPosition.Y);
@@ -81,40 +133,16 @@ namespace Object_Oriented_Map_System.Entities
             else
             {
                 nextStep = new Point(GridPosition.X, GridPosition.Y + Math.Sign(dy));
-            }
-
-            //  Ensure tile is walkable
-            if (gameMap.IsTileWalkable(nextStep))
-            {
-                return nextStep;
-            }
-
-            //  If preferred move is blocked, try the other direction
-            if (Math.Abs(dx) > Math.Abs(dy))
-            {
-                nextStep = new Point(GridPosition.X, GridPosition.Y + Math.Sign(dy));
-            }
-            else
-            {
-                nextStep = new Point(GridPosition.X + Math.Sign(dx), GridPosition.Y);
             }
 
             return gameMap.IsTileWalkable(nextStep) ? nextStep : GridPosition;
         }
 
-        public void Die()
-        {
-            if (!IsAlive) return;
-
-            IsAlive = false;
-            gameManager.Enemies.Remove(this);
-            gameManager.CheckExitTile(); // Open the exit if no enemies remain
-            LogToFile($"Enemy at {GridPosition} died. Checking for open exit.");
-        }
-
         public void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(texture, worldPosition, Color.White);
+            SpriteEffects spriteEffects = isFlipped ? SpriteEffects.FlipVertically : SpriteEffects.None;
+
+            spriteBatch.Draw(texture, worldPosition, null, Color.White, 0f, Vector2.Zero, 1f, spriteEffects, 0f);
         }
 
         private void LogToFile(string message)
