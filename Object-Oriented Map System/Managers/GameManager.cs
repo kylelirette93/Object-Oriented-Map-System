@@ -92,7 +92,7 @@ namespace Object_Oriented_Map_System.Managers
             //  Ensure map is fully loaded before spawning enemies
             if (gameMap.Rows > 0 && gameMap.Columns > 0)
             {
-                SpawnEnemies(1); 
+                SpawnEnemies(2); 
             }
 
             turnManager.StartPlayerTurn();

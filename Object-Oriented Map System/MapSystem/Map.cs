@@ -153,21 +153,23 @@ namespace Object_Oriented_Map_System.MapSystem
                 int width = rand.Next(2, 5); // Cluster width: 2 to 4 tiles
                 int height = rand.Next(2, 5); // Cluster height: 2 to 4 tiles
 
-                int x, y;
+                int x = 0, y = 0;
                 bool validPlacement;
+                Rectangle newCluster = new Rectangle(); // Declare it outside loop
 
                 do
                 {
                     x = rand.Next(1, Columns - width - 1);
                     y = rand.Next(1, Rows - height - 1);
+                    newCluster = new Rectangle(x, y, width, height); // Assign after getting x, y
 
-                    Rectangle newCluster = new Rectangle(x, y, width, height);
                     validPlacement = true;
 
-                    // Ensure no obstacles touch each other
+                    // **Ensure no obstacles touch each other**
                     foreach (Rectangle existing in placedObstacles)
                     {
-                        if (newCluster.Intersects(existing) || newCluster.Intersects(new Rectangle(existing.X - 1, existing.Y - 1, existing.Width + 2, existing.Height + 2)))
+                        if (newCluster.Intersects(existing) ||
+                            newCluster.Intersects(new Rectangle(existing.X - 1, existing.Y - 1, existing.Width + 2, existing.Height + 2)))
                         {
                             validPlacement = false;
                             break;
@@ -178,6 +180,17 @@ namespace Object_Oriented_Map_System.MapSystem
                     if (validPlacement && (newCluster.Contains(SpawnPoint) || exitPositions.Exists(p => newCluster.Contains(p))))
                     {
                         validPlacement = false;
+                    }
+
+                    // **Ensure obstacle does NOT spawn ADJACENT to ExitTiles**
+                    foreach (Point exit in exitPositions)
+                    {
+                        Rectangle exitArea = new Rectangle(exit.X - 1, exit.Y - 1, 3, 3); // Area 1 tile around exit
+                        if (newCluster.Intersects(exitArea))
+                        {
+                            validPlacement = false;
+                            break;
+                        }
                     }
 
                     attempts++;
@@ -195,7 +208,7 @@ namespace Object_Oriented_Map_System.MapSystem
                         }
                     }
 
-                    placedObstacles.Add(new Rectangle(x, y, width, height));
+                    placedObstacles.Add(newCluster); // Now newCluster exists in this scope
                 }
             }
 
