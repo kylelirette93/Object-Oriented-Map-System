@@ -45,6 +45,12 @@ namespace Object_Oriented_Map_System.Managers
 
         public Point PlayerGridPosition => playerGridPosition;
 
+        public Inventory PlayerInventory { get; private set; }
+        private Texture2D whiteTexture;
+
+        public List<Item> Items { get; private set; } = new List<Item>();
+        private Texture2D healthPotionTexture;
+
         public GameManager(GraphicsDeviceManager graphics, ContentManager content)
         {
             _graphics = graphics;
@@ -52,6 +58,7 @@ namespace Object_Oriented_Map_System.Managers
             gameMap = new Map(requiredRows, requiredColumns);
             previousKeyboardState = Keyboard.GetState();
             turnManager = new TurnManager(this);
+            PlayerInventory = new Inventory();
 
             PlayerHealth = new HealthComponent(5); // Set player health to 5
             PlayerHealth.OnHealthChanged += () => LogToFile($"Player took damage. Health: {PlayerHealth.CurrentHealth}");
@@ -64,6 +71,10 @@ namespace Object_Oriented_Map_System.Managers
             enemyTexture = _content.Load<Texture2D>("rat");
             openExitTexture = _content.Load<Texture2D>("OpenExitTile");
             damageFont = _content.Load<SpriteFont>("DamageFont");
+            whiteTexture = new Texture2D(_graphics.GraphicsDevice, 1, 1);
+            whiteTexture.SetData(new Color[] { Color.White });
+            healthPotionTexture = _content.Load<Texture2D>("HealthPotion");
+
             gameMap.LoadContent(_content);
 
             // Load maps
@@ -92,7 +103,8 @@ namespace Object_Oriented_Map_System.Managers
             //  Ensure map is fully loaded before spawning enemies
             if (gameMap.Rows > 0 && gameMap.Columns > 0)
             {
-                SpawnEnemies(2); 
+                SpawnEnemies(2);
+                SpawnItems(2);
             }
 
             turnManager.StartPlayerTurn();
@@ -118,7 +130,7 @@ namespace Object_Oriented_Map_System.Managers
                 foreach (var enemy in enemiesToRemove)
                 {
                     Enemies.Remove(enemy);
-                    LogToFile($"Removed enemy at {enemy.GridPosition}.");
+                    //LogToFile($"Removed enemy at {enemy.GridPosition}.");
                 }
                 enemiesToRemove.Clear(); // Clear the queue after processing
                 CheckExitTile(); // Ensure exit updates after enemy removal
@@ -194,6 +206,11 @@ namespace Object_Oriented_Map_System.Managers
                 enemy.Draw(spriteBatch);
             }
 
+            foreach (var item in Items)
+            {
+                item.Draw(spriteBatch, gameMap.TileWidth, gameMap.TileHeight);
+            }
+
             foreach (var damageText in damageTexts)
             {
                 damageText.Draw(spriteBatch);
@@ -211,6 +228,10 @@ namespace Object_Oriented_Map_System.Managers
             string healthText = $"Player Health: {PlayerHealth.CurrentHealth} / {PlayerHealth.MaxHealth}";
             Vector2 healthPosition = new Vector2(10, 10); // 10px from top and left corner
             spriteBatch.DrawString(damageFont, healthText, healthPosition, Color.Black);
+
+            // Draw the Inventory
+            Vector2 inventoryPosition = new Vector2(10, 50); // Slightly below health bar
+            PlayerInventory.Draw(spriteBatch, damageFont, inventoryPosition, whiteTexture);
 
             spriteBatch.End();
         }
@@ -244,6 +265,7 @@ namespace Object_Oriented_Map_System.Managers
             ResetPlayerPosition();
             Enemies.Clear();
             SpawnEnemies(2);
+            SpawnItems(2);
         }
 
         public void HandlePlayerTurn(KeyboardState currentKeyboardState)
@@ -299,6 +321,14 @@ namespace Object_Oriented_Map_System.Managers
                     turnManager.EndPlayerTurn(); // End turn after movement
                 }
             }
+
+            Item itemAtTarget = Items.FirstOrDefault(item => item.GridPosition == targetPosition && !item.IsPickedUp);
+
+            if (itemAtTarget != null)
+            {
+                itemAtTarget.OnPickup(this);
+                LogToFile($"Player picked up item at {targetPosition}");
+            }
         }
 
         public void AddDamageText(string text, Vector2 position)
@@ -308,13 +338,13 @@ namespace Object_Oriented_Map_System.Managers
 
         private void HandlePlayerDeath()
         {
-            LogToFile("Player has died! Game Over.");
+            //LogToFile("Player has died! Game Over.");
         }
 
         public void PlayerTakeDamage(int damage)
         {
             PlayerHealth.TakeDamage(damage);
-            LogToFile($"Player took {damage} damage! Health: {PlayerHealth.CurrentHealth}");          
+            //LogToFile($"Player took {damage} damage! Health: {PlayerHealth.CurrentHealth}");          
 
             if (!PlayerHealth.IsAlive)
             {
@@ -397,6 +427,45 @@ namespace Object_Oriented_Map_System.Managers
                 var enemy = new Enemy(enemyTexture, spawnPoint, gameMap, this);
                 Enemies.Add(enemy);
                 //LogToFile($"Spawned enemy #{i + 1} at {spawnPoint}");
+            }
+        }
+
+        private void SpawnItems(int count)
+        {
+            Random rand = new Random();
+            List<Point> availableTiles = new List<Point>();
+
+            // Ensure it checks within bounds and only on walkable tiles
+            for (int row = 1; row < gameMap.Rows - 1; row++) // Avoid the border walls
+            {
+                for (int col = 1; col < gameMap.Columns - 1; col++)
+                {
+                    Point point = new Point(col, row);
+                    if (gameMap.IsTileWalkable(point) && point != gameMap.SpawnPoint)
+                    {
+                        availableTiles.Add(point);
+                    }
+                }
+            }
+
+            LogToFile($"Available tiles for items: {availableTiles.Count}");
+
+            if (availableTiles.Count == 0)
+            {
+                LogToFile("No valid tiles available to spawn items.");
+                return;
+            }
+
+            for (int i = 0; i < count && availableTiles.Count > 0; i++)
+            {
+                int index = rand.Next(availableTiles.Count);
+                Point spawnPoint = availableTiles[index];
+                availableTiles.RemoveAt(index);
+
+                // Spawn a health potion
+                var healthPotion = new HealthPotion(healthPotionTexture, spawnPoint);
+                Items.Add(healthPotion);
+                LogToFile($"Spawned HealthPotion at {spawnPoint}");
             }
         }
 

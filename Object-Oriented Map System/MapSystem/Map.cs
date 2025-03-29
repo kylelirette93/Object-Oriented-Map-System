@@ -133,7 +133,7 @@ namespace Object_Oriented_Map_System.MapSystem
             // Ensure a valid path exists between the spawn point and at least one exit
             if (!ValidatePathExists())
             {
-                LogToFile("Invalid map generated! Retrying full map generation...");
+                //LogToFile("Invalid map generated! Retrying full map generation...");
                 GenerateRandomMap(); // Regenerate the entire map if it's invalid
                 return;
             }
@@ -212,7 +212,7 @@ namespace Object_Oriented_Map_System.MapSystem
                 }
             }
 
-            LogToFile($"Obstacle clusters placed: {placedObstacles.Count}");
+            //LogToFile($"Obstacle clusters placed: {placedObstacles.Count}");
         }
 
         private bool ValidatePathExists()
@@ -297,11 +297,11 @@ namespace Object_Oriented_Map_System.MapSystem
 
         public void LoadMapFromFile(string filename)
         {
-            LogToFile($"Loading pre-made map: {filename}");
+            //LogToFile($"Loading pre-made map: {filename}");
 
             if (!File.Exists(filename))
             {
-                LogToFile($"ERROR: Map file not found: {filename}");
+                //LogToFile($"ERROR: Map file not found: {filename}");
                 return;
             }
 
@@ -332,19 +332,19 @@ namespace Object_Oriented_Map_System.MapSystem
                             Tiles[row, col] = new ExitTile(exitTexture, position);
                             break;
                         default:
-                            LogToFile($"Unrecognized tile character '{c}' at ({col}, {row}). Defaulting to wall.");
+                            //LogToFile($"Unrecognized tile character '{c}' at ({col}, {row}). Defaulting to wall.");
                             Tiles[row, col] = new NonWalkableTile(nonWalkableTexture, position);
                             break;
                     }
                 }
             }
 
-            LogToFile($"Finished loading map: {filename}");
-            LogToFile($"Total Walkable Tiles: {walkableTileCount}");
+            //LogToFile($"Finished loading map: {filename}");
+            //LogToFile($"Total Walkable Tiles: {walkableTileCount}");
 
             if (walkableTileCount == 0)
             {
-                LogToFile("ERROR: No walkable tiles found in map!");
+                //LogToFile("ERROR: No walkable tiles found in map!");
             }
         }
 
@@ -353,19 +353,19 @@ namespace Object_Oriented_Map_System.MapSystem
             if (gridPosition.X < 0 || gridPosition.Y < 0 ||
                 gridPosition.X >= Columns || gridPosition.Y >= Rows)
             {
-                LogToFile($"Tile ({gridPosition.X}, {gridPosition.Y}) is OUT OF BOUNDS.");
+                //LogToFile($"Tile ({gridPosition.X}, {gridPosition.Y}) is OUT OF BOUNDS.");
                 return false;
             }
 
             if (Tiles == null)
             {
-                LogToFile("ERROR: Tiles array is NULL when checking IsTileWalkable.");
+                //LogToFile("ERROR: Tiles array is NULL when checking IsTileWalkable.");
                 return false;
             }
 
             if (Tiles[gridPosition.Y, gridPosition.X] == null)
             {
-                LogToFile($"ERROR: Tile at ({gridPosition.X}, {gridPosition.Y}) is NULL.");
+                //LogToFile($"ERROR: Tile at ({gridPosition.X}, {gridPosition.Y}) is NULL.");
                 return false;
             }
 

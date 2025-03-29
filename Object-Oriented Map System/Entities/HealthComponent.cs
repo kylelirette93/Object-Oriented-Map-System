@@ -31,5 +31,13 @@ namespace Object_Oriented_Map_System.Entities
                 OnDeath?.Invoke(); // Notify that this entity has died
             }
         }
+
+        public void Heal(int amount)
+        {
+            if (!IsAlive) return;
+
+            CurrentHealth = Math.Min(CurrentHealth + amount, MaxHealth);
+            OnHealthChanged?.Invoke();
+        }
     }
 }
