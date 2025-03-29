@@ -202,6 +202,15 @@ namespace Object_Oriented_Map_System.Managers
             spriteBatch.Draw(playerTexture, playerPosition, null, Color.White, 0f,
                 new Vector2(playerTexture.Width / 2, playerTexture.Height / 2),
                 Vector2.One, SpriteEffects.None, 0f);
+            spriteBatch.End();
+
+            // **Draw UI without the transformMatrix to keep it in the window coordinates**
+            spriteBatch.Begin();
+
+            // Draw the player health in the top left corner
+            string healthText = $"Player Health: {PlayerHealth.CurrentHealth} / {PlayerHealth.MaxHealth}";
+            Vector2 healthPosition = new Vector2(10, 10); // 10px from top and left corner
+            spriteBatch.DrawString(damageFont, healthText, healthPosition, Color.Black);
 
             spriteBatch.End();
         }
