@@ -430,6 +430,7 @@ namespace Object_Oriented_Map_System.Managers
 
             ResetPlayerPosition();
             Enemies.Clear();
+            Items.Clear();
             SpawnEnemies(2);
             SpawnItems(3);
         }

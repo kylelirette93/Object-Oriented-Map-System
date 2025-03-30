@@ -11,7 +11,7 @@ namespace Object_Oriented_Map_System.Entities
     public class Enemy
     {
         public Point GridPosition { get; protected set; }
-        private Vector2 worldPosition;
+        protected Vector2 worldPosition;
         private Texture2D texture;
         private Map gameMap;
         protected GameManager gameManager;
@@ -19,7 +19,7 @@ namespace Object_Oriented_Map_System.Entities
         public HealthComponent Health { get; private set; } // Enemy Health System
         public bool IsAlive => Health.IsAlive; // Check if enemy is alive
         public bool IsStunned { get; protected set; } = false; // Enemy Stun Mechanic
-        private bool isFlipped = false;
+        protected bool isFlipped = false;
 
         public Enemy(Texture2D enemyTexture, Point startGridPos, Map map, GameManager manager)
         {
