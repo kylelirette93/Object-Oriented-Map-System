@@ -28,6 +28,8 @@ namespace Object_Oriented_Map_System.Managers
         public Map gameMap;
         private Texture2D playerTexture;
         private Texture2D enemyTexture;
+        private Texture2D rangedEnemyTexture;
+        private Texture2D ghostEnemyTexture;
         private Texture2D openExitTexture;
         public Texture2D fireballTexture;
         private Texture2D lightningScrollTexture;
@@ -71,6 +73,8 @@ namespace Object_Oriented_Map_System.Managers
 
         public List<ExplosionEffect> ActiveExplosions { get; private set; } = new List<ExplosionEffect>();
 
+        public bool LastAttackWasScroll {  get; set; }
+
         public GameManager(GraphicsDeviceManager graphics, ContentManager content)
         {
             _graphics = graphics;
@@ -89,6 +93,8 @@ namespace Object_Oriented_Map_System.Managers
         {
             playerTexture = _content.Load<Texture2D>("player");
             enemyTexture = _content.Load<Texture2D>("rat");
+            rangedEnemyTexture = _content.Load<Texture2D>("EvilWizard");
+            ghostEnemyTexture = _content.Load<Texture2D>("Ghost");
             openExitTexture = _content.Load<Texture2D>("OpenExitTile");
             damageFont = _content.Load<SpriteFont>("DamageFont");
             whiteTexture = new Texture2D(_graphics.GraphicsDevice, 1, 1);
@@ -220,6 +226,12 @@ namespace Object_Oriented_Map_System.Managers
                 ExitBombAimingMode();
                 turnManager.EndPlayerTurn();
             }
+        }
+
+        public void TriggerExplosionEffect(List<Point> explosionTiles)
+        {
+            ExplosionEffect explosionEffect = new ExplosionEffect(explosionTiles);
+            ActiveExplosions.Add(explosionEffect);
         }
 
         public void Update(GameTime gameTime)
@@ -505,7 +517,7 @@ namespace Object_Oriented_Map_System.Managers
                     }
                 }
             }
-        }
+        }      
 
         public void AddDamageText(string text, Vector2 position)
         {
@@ -600,9 +612,27 @@ namespace Object_Oriented_Map_System.Managers
                 Point spawnPoint = availableTiles[index];
                 availableTiles.RemoveAt(index);
 
-                var enemy = new Enemy(enemyTexture, spawnPoint, gameMap, this);
-                Enemies.Add(enemy);
-                //LogToFile($"Spawned enemy #{i + 1} at {spawnPoint}");
+                // Randomly choose enemy type
+                int enemyType = rand.Next(3); // 0 = Regular, 1 = Ranged, 2 = Ghost
+
+                if (enemyType == 0)
+                {
+                    var enemy = new Enemy(enemyTexture, spawnPoint, gameMap, this);
+                    Enemies.Add(enemy);
+                    LogToFile($"Spawned Enemy at {spawnPoint}");
+                }
+                else if (enemyType == 1)
+                {
+                    var rangedEnemy = new RangedEnemy(rangedEnemyTexture, spawnPoint, gameMap, this);
+                    Enemies.Add(rangedEnemy);
+                    LogToFile($"Spawned RangedEnemy at {spawnPoint}");
+                }
+                else
+                {
+                    var ghostEnemy = new GhostEnemy(ghostEnemyTexture, spawnPoint, gameMap, this);
+                    Enemies.Add(ghostEnemy);
+                    LogToFile($"Spawned GhostEnemy at {spawnPoint}");
+                }
             }
         }
 

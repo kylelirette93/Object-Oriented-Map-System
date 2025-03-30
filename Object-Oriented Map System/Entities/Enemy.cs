@@ -10,15 +10,15 @@ namespace Object_Oriented_Map_System.Entities
 {
     public class Enemy
     {
-        public Point GridPosition { get; private set; }
+        public Point GridPosition { get; protected set; }
         private Vector2 worldPosition;
         private Texture2D texture;
         private Map gameMap;
-        private GameManager gameManager;
+        protected GameManager gameManager;
 
         public HealthComponent Health { get; private set; } // Enemy Health System
         public bool IsAlive => Health.IsAlive; // Check if enemy is alive
-        public bool IsStunned { get; private set; } = false; // Enemy Stun Mechanic
+        public bool IsStunned { get; protected set; } = false; // Enemy Stun Mechanic
         private bool isFlipped = false;
 
         public Enemy(Texture2D enemyTexture, Point startGridPos, Map map, GameManager manager)
@@ -34,7 +34,7 @@ namespace Object_Oriented_Map_System.Entities
             Health.OnDeath += Die;
         }
 
-        public void TakeTurn(Action onComplete)
+        public virtual void TakeTurn(Action onComplete)
         {
             if (!gameManager.turnManager.IsEnemyTurn())
             {
@@ -86,7 +86,7 @@ namespace Object_Oriented_Map_System.Entities
             gameManager.ScheduleDelayedAction(0.3f, onComplete);
         }
 
-        public void TakeDamage(int damage)
+        public virtual void TakeDamage(int damage)
         {
             if (!IsAlive) return;
 
@@ -115,7 +115,7 @@ namespace Object_Oriented_Map_System.Entities
         }
 
 
-        private Point FindPathToTarget(Point target)
+        protected virtual Point FindPathToTarget(Point target)
         {
             int dx = target.X - GridPosition.X;
             int dy = target.Y - GridPosition.Y;

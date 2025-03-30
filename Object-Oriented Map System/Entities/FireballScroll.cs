@@ -27,6 +27,7 @@ namespace Object_Oriented_Map_System.Entities
         {
             if (gameManager.PlayerHealth.IsAlive)
             {
+                gameManager.LastAttackWasScroll = true; // Mark it as a scroll attack
                 // Trigger the aiming mode for Fireball
                 gameManager.EnterFireballAimingMode(this);
                 LogToFile("Player used Fireball Scroll. Choose a direction to cast it.");

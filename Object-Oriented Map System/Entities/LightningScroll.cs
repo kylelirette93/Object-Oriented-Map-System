@@ -25,6 +25,7 @@ namespace Object_Oriented_Map_System.Entities
         {
             if (gameManager.PlayerHealth.IsAlive)
             {
+                gameManager.LastAttackWasScroll = true; // Mark as a scroll attack
                 // Deal damage to all enemies on the map
                 foreach (var enemy in gameManager.Enemies)
                 {

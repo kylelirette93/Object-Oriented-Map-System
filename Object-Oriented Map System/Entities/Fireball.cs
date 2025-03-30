@@ -13,16 +13,18 @@ namespace Object_Oriented_Map_System.Entities
         private Point direction;
         private GameManager gameManager;
         private int damage;
+        private bool isEnemyProjectile;
 
         public bool IsActive { get; private set; } = true;
 
-        public Fireball(Texture2D texture, Point startPosition, Point direction, int damage, GameManager manager)
+        public Fireball(Texture2D texture, Point startPosition, Point direction, int damage, GameManager manager, bool isEnemyProjectile = false)
         {
             this.texture = texture;
             this.position = startPosition;
             this.direction = direction;
             this.damage = damage;
             this.gameManager = manager;
+            this.isEnemyProjectile = isEnemyProjectile;
         }
 
         public void Update()
@@ -40,27 +42,44 @@ namespace Object_Oriented_Map_System.Entities
                 return;
             }
 
-            // Check if fireball hits an enemy
-            Enemy enemy = gameManager.Enemies.Find(e => e.GridPosition == position);
-            if (enemy != null)
+            if (isEnemyProjectile)
             {
-                enemy.TakeDamage(damage);
-                LogToFile($"Fireball hit enemy at {position} for {damage} damage!");
-
-                // Create a damage text at the enemy's position
-                Vector2 damageTextPosition = new Vector2(
-                    enemy.GridPosition.X * gameManager.gameMap.TileWidth + gameManager.gameMap.TileWidth / 2,
-                    enemy.GridPosition.Y * gameManager.gameMap.TileHeight
-                );
-                gameManager.AddDamageText($"-{damage}", damageTextPosition);
-
-                if (!enemy.IsAlive)
+                // Enemy fireball hits the player
+                if (gameManager.PlayerGridPosition == position)
                 {
-                    gameManager.MarkEnemyForRemoval(enemy); // Ensure enemy is marked for removal
-                    LogToFile($"Enemy at {position} defeated by Fireball.");
+                    gameManager.PlayerTakeDamage(damage);
+                    Vector2 damageTextPosition = new Vector2(
+                        position.X * gameManager.gameMap.TileWidth + gameManager.gameMap.TileWidth / 2,
+                        position.Y * gameManager.gameMap.TileHeight
+                    );
+                    gameManager.AddDamageText($"-{damage}", damageTextPosition);
+                    IsActive = false;
+                    LogToFile($"Player hit by a Fireball for {damage} damage!");
+                    return;
                 }
+            }
+            else
+            {
+                // Player fireball hits an enemy
+                Enemy enemy = gameManager.Enemies.Find(e => e.GridPosition == position);
+                if (enemy != null)
+                {
+                    enemy.TakeDamage(damage);
+                    Vector2 damageTextPosition = new Vector2(
+                        position.X * gameManager.gameMap.TileWidth + gameManager.gameMap.TileWidth / 2,
+                        position.Y * gameManager.gameMap.TileHeight
+                    );
+                    gameManager.AddDamageText($"-{damage}", damageTextPosition);
+                    IsActive = false;
+                    LogToFile($"Fireball hit enemy at {position} for {damage} damage!");
 
-                IsActive = false;
+                    if (!enemy.IsAlive)
+                    {
+                        gameManager.MarkEnemyForRemoval(enemy);
+                        LogToFile($"Enemy at {position} defeated by Fireball.");
+                    }
+                    return;
+                }
             }
         }
 
@@ -69,7 +88,8 @@ namespace Object_Oriented_Map_System.Entities
             if (IsActive)
             {
                 Vector2 worldPosition = new Vector2(position.X * tileWidth, position.Y * tileHeight);
-                spriteBatch.Draw(texture, worldPosition, Color.White);
+                Color fireballColor = isEnemyProjectile ? Color.Red : Color.White; // Red for enemy fireballs
+                spriteBatch.Draw(texture, worldPosition, fireballColor);
             }
         }
 
