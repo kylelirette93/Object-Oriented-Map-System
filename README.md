@@ -5,7 +5,7 @@ With this sprint I've added an inventory system and 4 different items as well as
 ## Updates from last sprint
 I've added a tracker to the top left to display the players health so you can visually see it.
 ## Fixes for next sprint - (Ran out of time or couldn't figure them out)
-First enemy turn movement is still causing issues and moving when they shouldn't, Player can still move when their health goes below 0(add a game over scenario), Ghost sprite draws to screen but doesn't properly update when it moves so you can't tell where the enemy is at, Ranged Enemy sometimes attacks more than once a turn, Fireball scroll can't kill ghost(potentially because the check for scroll effects is in the FireballScroll script and not the Fireball Script), Game is drawn quite small - need to draw it bigger so it's easier to see.
+First enemy turn movement is still causing issues and moving when they shouldn't, Player can still move when their health goes below 0(add a game over scenario), Ghost sprite draws to screen but doesn't properly update when it moves so you can't tell where the enemy is at, Enemies sometimes take more than 1 turn in a row, Fireball scroll can't kill ghost(potentially because the check for scroll effects is in the FireballScroll script and not the Fireball Script), Game is drawn quite small - need to draw it bigger so it's easier to see.
 
 # Sprint 2 Changes and Messages
 With this sprint we added a couple new things to the project, being basic enemies, a turn-based movement system, a health and combat system as well as more obstacles generating in our maps.   The enemy class is used for handling basic enemies which we can extend to create variants later on if we want. It initializes the enemies health
