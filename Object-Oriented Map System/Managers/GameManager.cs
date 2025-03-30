@@ -28,7 +28,7 @@ namespace Object_Oriented_Map_System.Managers
         private Texture2D playerTexture;
         private Texture2D enemyTexture;
         private Texture2D openExitTexture;
-        private Texture2D fireballTexture;
+        public Texture2D fireballTexture;
         private Vector2 playerPosition;
         private Point playerGridPosition;
         private KeyboardState previousKeyboardState;
@@ -60,6 +60,8 @@ namespace Object_Oriented_Map_System.Managers
 
         private GameState gameState = GameState.Normal;
         private FireballScroll activeFireball;
+
+        public List<Fireball> ActiveFireballs { get; private set; } = new List<Fireball>();
 
         public GameManager(GraphicsDeviceManager graphics, ContentManager content)
         {
@@ -222,6 +224,14 @@ namespace Object_Oriented_Map_System.Managers
                 HandlePlayerTurn(currentKeyboardState);
             }
 
+            for (int i = ActiveFireballs.Count - 1; i >= 0; i--)
+            {
+                ActiveFireballs[i].Update();
+                if (!ActiveFireballs[i].IsActive)
+                {
+                    ActiveFireballs.RemoveAt(i);
+                }
+            }
 
             // Ensure exit only works when all enemies are defeated
             if (gameMap.Tiles[playerGridPosition.Y, playerGridPosition.X] is ExitTile && Enemies.Count == 0)
@@ -251,12 +261,20 @@ namespace Object_Oriented_Map_System.Managers
 
             foreach (var enemy in Enemies)
             {
-                enemy.Draw(spriteBatch);
+                if (enemy.IsAlive) // Ensure only alive enemies are drawn
+                {
+                    enemy.Draw(spriteBatch);
+                }
             }
 
             foreach (var item in Items)
             {
                 item.Draw(spriteBatch, gameMap.TileWidth, gameMap.TileHeight);
+            }
+
+            foreach (var fireball in ActiveFireballs)
+            {
+                fireball.Draw(spriteBatch, gameMap.TileWidth, gameMap.TileHeight);
             }
 
             foreach (var damageText in damageTexts)

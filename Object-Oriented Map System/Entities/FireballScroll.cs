@@ -44,46 +44,17 @@ namespace Object_Oriented_Map_System.Entities
 
         public void CastFireball(GameManager gameManager, Point direction)
         {
-            Point currentPosition = gameManager.PlayerGridPosition;
+            // Create a fireball object at the player's current position
+            Point startPosition = gameManager.PlayerGridPosition;
 
-            while (true)
-            {
-                currentPosition += direction;
+            // Instantiate a Fireball and add it to the active list
+            Fireball fireball = new Fireball(gameManager.fireballTexture, startPosition, direction, Damage, gameManager);
+            gameManager.ActiveFireballs.Add(fireball);
 
-                // Check if the current position is within bounds
-                if (currentPosition.X < 0 || currentPosition.Y < 0 ||
-                    currentPosition.X >= gameManager.gameMap.Columns || currentPosition.Y >= gameManager.gameMap.Rows)
-                {
-                    LogToFile("Fireball went out of bounds and disappeared.");
-                    break; // Out of bounds
-                }
-
-                // Check if the fireball hits a wall using the tile type
-                Tile tile = gameManager.gameMap.Tiles[currentPosition.Y, currentPosition.X];
-                if (tile is NonWalkableTile)
-                {
-                    LogToFile("Fireball hit a wall and disappeared.");
-                    break; // Fireball hits a wall
-                }
-
-                // Check if the fireball hits an enemy
-                Enemy enemy = gameManager.Enemies.Find(e => e.GridPosition == currentPosition);
-                if (enemy != null)
-                {
-                    enemy.TakeDamage(Damage);
-                    LogToFile($"Fireball hit enemy at {currentPosition} for {Damage} damage!");
-
-                    if (!enemy.IsAlive)
-                    {
-                        gameManager.MarkEnemyForRemoval(enemy); // Mark for removal if defeated
-                        LogToFile($"Enemy at {currentPosition} defeated by Fireball.");
-                    }
-                    break; // Fireball hits an enemy
-                }
-            }
-
+            // Remove the scroll and end the player's turn
             gameManager.PlayerInventory.RemoveItem(this);
             gameManager.turnManager.EndPlayerTurn();
+            LogToFile("Fireball launched!");
         }
 
         private void LogToFile(string message)

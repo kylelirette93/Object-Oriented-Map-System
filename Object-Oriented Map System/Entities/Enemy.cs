@@ -147,6 +147,8 @@ namespace Object_Oriented_Map_System.Entities
 
         public void Draw(SpriteBatch spriteBatch)
         {
+            if (!IsAlive) return;
+
             SpriteEffects spriteEffects = isFlipped ? SpriteEffects.FlipVertically : SpriteEffects.None;
 
             spriteBatch.Draw(texture, worldPosition, null, Color.White, 0f, Vector2.Zero, 1f, spriteEffects, 0f);
