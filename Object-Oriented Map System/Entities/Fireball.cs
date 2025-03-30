@@ -47,6 +47,13 @@ namespace Object_Oriented_Map_System.Entities
                 enemy.TakeDamage(damage);
                 LogToFile($"Fireball hit enemy at {position} for {damage} damage!");
 
+                // Create a damage text at the enemy's position
+                Vector2 damageTextPosition = new Vector2(
+                    enemy.GridPosition.X * gameManager.gameMap.TileWidth + gameManager.gameMap.TileWidth / 2,
+                    enemy.GridPosition.Y * gameManager.gameMap.TileHeight
+                );
+                gameManager.AddDamageText($"-{damage}", damageTextPosition);
+
                 if (!enemy.IsAlive)
                 {
                     gameManager.MarkEnemyForRemoval(enemy); // Ensure enemy is marked for removal

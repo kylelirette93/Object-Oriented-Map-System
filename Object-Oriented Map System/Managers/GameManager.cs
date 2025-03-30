@@ -290,7 +290,7 @@ namespace Object_Oriented_Map_System.Managers
             if (gameState == GameState.FireballAiming)
             {
                 spriteBatch.Begin();
-                spriteBatch.DrawString(damageFont, "Choose Fireball Direction (Arrow Keys)", new Vector2(10, 40), Color.Red);
+                spriteBatch.DrawString(damageFont, "Choose Fireball Direction (Arrow Keys)", new Vector2(10, 90), Color.Red);
                 spriteBatch.End();
             }
 
