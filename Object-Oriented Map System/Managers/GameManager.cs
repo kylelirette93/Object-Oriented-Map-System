@@ -14,14 +14,21 @@ using Microsoft.Xna.Framework.Audio;
 
 namespace Object_Oriented_Map_System.Managers
 {
+    public enum GameState
+    {
+        Normal,
+        FireballAiming
+    }
+
     public class GameManager
     {
         private ContentManager _content;
         private GraphicsDeviceManager _graphics;
-        private Map gameMap;
+        public Map gameMap;
         private Texture2D playerTexture;
         private Texture2D enemyTexture;
         private Texture2D openExitTexture;
+        private Texture2D fireballTexture;
         private Vector2 playerPosition;
         private Point playerGridPosition;
         private KeyboardState previousKeyboardState;
@@ -51,6 +58,9 @@ namespace Object_Oriented_Map_System.Managers
         public List<Item> Items { get; private set; } = new List<Item>();
         private Texture2D healthPotionTexture;
 
+        private GameState gameState = GameState.Normal;
+        private FireballScroll activeFireball;
+
         public GameManager(GraphicsDeviceManager graphics, ContentManager content)
         {
             _graphics = graphics;
@@ -74,6 +84,7 @@ namespace Object_Oriented_Map_System.Managers
             whiteTexture = new Texture2D(_graphics.GraphicsDevice, 1, 1);
             whiteTexture.SetData(new Color[] { Color.White });
             healthPotionTexture = _content.Load<Texture2D>("HealthPotion");
+            fireballTexture = _content.Load<Texture2D>("FireballScroll");
 
             gameMap.LoadContent(_content);
 
@@ -104,7 +115,7 @@ namespace Object_Oriented_Map_System.Managers
             if (gameMap.Rows > 0 && gameMap.Columns > 0)
             {
                 SpawnEnemies(2);
-                SpawnItems(2);
+                SpawnItems(3);
             }
 
             turnManager.StartPlayerTurn();
@@ -130,10 +141,41 @@ namespace Object_Oriented_Map_System.Managers
                 foreach (var enemy in enemiesToRemove)
                 {
                     Enemies.Remove(enemy);
-                    //LogToFile($"Removed enemy at {enemy.GridPosition}.");
+                    LogToFile($"Removed enemy at {enemy.GridPosition}.");
                 }
                 enemiesToRemove.Clear(); // Clear the queue after processing
                 CheckExitTile(); // Ensure exit updates after enemy removal
+            }
+        }
+
+        public void EnterFireballAimingMode(FireballScroll fireball)
+        {
+            if (fireball == null) return; // Safety Check
+            gameState = GameState.FireballAiming;
+            activeFireball = fireball;
+            LogToFile("Player is aiming a Fireball. Choose a direction.");
+        }
+
+        private void ExitFireballAimingMode()
+        {
+            gameState = GameState.Normal;
+            activeFireball = null;
+        }
+
+        private void HandleFireballAiming(KeyboardState currentKeyboardState)
+        {
+            Point direction = Point.Zero;
+
+            if (currentKeyboardState.IsKeyDown(Keys.Up)) direction = new Point(0, -1);
+            if (currentKeyboardState.IsKeyDown(Keys.Down)) direction = new Point(0, 1);
+            if (currentKeyboardState.IsKeyDown(Keys.Left)) direction = new Point(-1, 0);
+            if (currentKeyboardState.IsKeyDown(Keys.Right)) direction = new Point(1, 0);
+
+            if (direction != Point.Zero)
+            {
+                activeFireball.CastFireball(this, direction);
+                ExitFireballAimingMode();
+                turnManager.EndPlayerTurn();
             }
         }
 
@@ -168,12 +210,18 @@ namespace Object_Oriented_Map_System.Managers
             }
 
             KeyboardState currentKeyboardState = Keyboard.GetState();
+            HandleItemUsage(currentKeyboardState);
 
-            // Ensure only the player moves during their turn
-            if (playerCanMove && turnManager.IsPlayerTurn())
+            // Prioritize fireball aiming mode
+            if (gameState == GameState.FireballAiming)
+            {
+                HandleFireballAiming(currentKeyboardState);
+            }
+            else if (playerCanMove && turnManager.IsPlayerTurn())
             {
                 HandlePlayerTurn(currentKeyboardState);
             }
+
 
             // Ensure exit only works when all enemies are defeated
             if (gameMap.Tiles[playerGridPosition.Y, playerGridPosition.X] is ExitTile && Enemies.Count == 0)
@@ -221,6 +269,13 @@ namespace Object_Oriented_Map_System.Managers
                 Vector2.One, SpriteEffects.None, 0f);
             spriteBatch.End();
 
+            if (gameState == GameState.FireballAiming)
+            {
+                spriteBatch.Begin();
+                spriteBatch.DrawString(damageFont, "Choose Fireball Direction (Arrow Keys)", new Vector2(10, 40), Color.Red);
+                spriteBatch.End();
+            }
+
             // **Draw UI without the transformMatrix to keep it in the window coordinates**
             spriteBatch.Begin();
 
@@ -265,7 +320,7 @@ namespace Object_Oriented_Map_System.Managers
             ResetPlayerPosition();
             Enemies.Clear();
             SpawnEnemies(2);
-            SpawnItems(2);
+            SpawnItems(3);
         }
 
         public void HandlePlayerTurn(KeyboardState currentKeyboardState)
@@ -331,6 +386,28 @@ namespace Object_Oriented_Map_System.Managers
             }
         }
 
+        private void HandleItemUsage(KeyboardState currentKeyboardState)
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                Keys key = Keys.D1 + i; // Keys 1-5
+                if (currentKeyboardState.IsKeyDown(key) && !previousKeyboardState.IsKeyDown(key))
+                {
+                    // Ensure the index is within the inventory size
+                    if (PlayerInventory.Items.Count > i)
+                    {
+                        // Use the item if it's present in the inventory
+                        LogToFile($"Using item at slot {i + 1}");
+                        PlayerInventory.UseItem(i, this);
+                    }
+                    else
+                    {
+                        LogToFile($"No item in slot {i + 1}.");
+                    }
+                }
+            }
+        }
+
         public void AddDamageText(string text, Vector2 position)
         {
             damageTexts.Add(new DamageText(text, position, damageFont));
@@ -358,7 +435,7 @@ namespace Object_Oriented_Map_System.Managers
             playerCanMove = canMove;
         }
 
-        private bool IsCellAccessible(int col, int row)
+        public bool IsCellAccessible(int col, int row)
         {
             if (row < 0 || row >= gameMap.Rows || col < 0 || col >= gameMap.Columns)
                 return false;
@@ -462,10 +539,20 @@ namespace Object_Oriented_Map_System.Managers
                 Point spawnPoint = availableTiles[index];
                 availableTiles.RemoveAt(index);
 
-                // Spawn a health potion
-                var healthPotion = new HealthPotion(healthPotionTexture, spawnPoint);
-                Items.Add(healthPotion);
-                LogToFile($"Spawned HealthPotion at {spawnPoint}");
+                int itemType = rand.Next(2); // 0 for HealthPotion, 1 for FireballScroll
+
+                if (itemType == 0)
+                {
+                    var healthPotion = new HealthPotion(healthPotionTexture, spawnPoint);
+                    Items.Add(healthPotion);
+                    LogToFile($"Spawned HealthPotion at {spawnPoint}");
+                }
+                else
+                {
+                    var fireballScroll = new FireballScroll(fireballTexture, spawnPoint);
+                    Items.Add(fireballScroll);
+                    LogToFile($"Spawned FireballScroll at {spawnPoint}");
+                }
             }
         }
 

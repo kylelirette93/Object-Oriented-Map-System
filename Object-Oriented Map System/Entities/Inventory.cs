@@ -30,20 +30,43 @@ namespace Object_Oriented_Map_System.Entities
 
         public void RemoveItem(Item item)
         {
+            if (Items == null || Items.Count == 0)
+            {
+                LogToFile("Inventory is empty. No item to remove.");
+                return;
+            }
+
             if (Items.Contains(item))
             {
                 Items.Remove(item);
+                LogToFile($"Item removed: {item.GetType().Name}. Remaining items: {Items.Count}");
+            }
+            else
+            {
+                LogToFile($"Item not found in inventory: {item.GetType().Name}");
             }
         }
 
         public void UseItem(int index, GameManager gameManager)
         {
-            if (index < 0 || index >= Items.Count)
-                return; // Invalid index
+            // Validate index to prevent out of range error
+            if (Items == null || Items.Count == 0)
+            {
+                LogToFile("Inventory is empty. No item to use.");
+                return;
+            }
 
-            Items[index].Use(gameManager);
-            Items.RemoveAt(index); // Remove after use
+            if (index < 0 || index >= Items.Count)
+            {
+                LogToFile($"Invalid inventory slot. Index: {index}, Items Count: {Items.Count}");
+                return;
+            }
+
+            Item item = Items[index];
+            LogToFile($"Using item: {item.GetType().Name} at index {index}");
+            item.Use(gameManager);            
         }
+
 
         public void Draw(SpriteBatch spriteBatch, SpriteFont font, Vector2 position, Texture2D whiteTexture)
         {

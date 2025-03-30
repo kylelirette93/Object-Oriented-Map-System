@@ -28,14 +28,14 @@ namespace Object_Oriented_Map_System.Managers
 
         public void StartPlayerTurn()
         {
-            LogToFile("Starting Player Turn...");
+            //LogToFile("Starting Player Turn...");
             CurrentTurn = TurnState.PlayerTurn;
             gameManager.SetPlayerCanMove(true);
         }
 
         public void EndPlayerTurn()
         {
-            LogToFile("Player turn ended. Switching to Enemy Turn.");
+            //LogToFile("Player turn ended. Switching to Enemy Turn.");
             gameManager.SetPlayerCanMove(false);
             CurrentTurn = TurnState.EnemyTurn;
 
@@ -56,16 +56,16 @@ namespace Object_Oriented_Map_System.Managers
 
         private void StartEnemyTurn()
         {
-            LogToFile("Enemy turn started. Processing enemy actions...");
+            //LogToFile("Enemy turn started. Processing enemy actions...");
 
             if (gameManager.Enemies.Count == 0)
             {
-                LogToFile("No enemies to process. Returning to Player Turn.");
+                //LogToFile("No enemies to process. Returning to Player Turn.");
                 EndEnemyTurn();
                 return;
             }
 
-            LogToFile($"Total enemies in turn order: {gameManager.Enemies.Count}");
+            //LogToFile($"Total enemies in turn order: {gameManager.Enemies.Count}");
             ProcessNextEnemy(0); // Begin enemy turns sequentially
         }
 
@@ -73,7 +73,7 @@ namespace Object_Oriented_Map_System.Managers
         {
             if (index >= gameManager.Enemies.Count)
             {
-                LogToFile("All enemies have moved. Switching back to Player Turn.");
+                //LogToFile("All enemies have moved. Switching back to Player Turn.");
                 EndEnemyTurn();
                 return;
             }
@@ -81,7 +81,7 @@ namespace Object_Oriented_Map_System.Managers
             // Ensure we are only processing enemies during EnemyTurn
             if (CurrentTurn != TurnState.EnemyTurn)
             {
-                LogToFile($"ERROR: Attempting to process enemy {index} while not in EnemyTurn!");
+                //LogToFile($"ERROR: Attempting to process enemy {index} while not in EnemyTurn!");
                 return;
             }
 
@@ -91,25 +91,25 @@ namespace Object_Oriented_Map_System.Managers
             // Ensure enemy does NOT move on PlayerTurn
             if (gameManager.turnManager.IsPlayerTurn())
             {
-                LogToFile($"ERROR: Enemy {index} tried to move during Player Turn! Aborting.");
+                //LogToFile($"ERROR: Enemy {index} tried to move during Player Turn! Aborting.");
                 return;
             }
 
-            LogToFile($"Processing turn for Enemy at {enemy.GridPosition}...");
+            //LogToFile($"Processing turn for Enemy at {enemy.GridPosition}...");
 
             if (IsEnemyTurn())
             {
                 // If the enemy is already dead, skip its turn
                 if (!enemy.IsAlive)
                 {
-                    LogToFile($"Skipping dead enemy at {enemy.GridPosition}.");
+                    //LogToFile($"Skipping dead enemy at {enemy.GridPosition}.");
                     gameManager.ScheduleDelayedAction(0.5f, () => ProcessNextEnemy(index + 1));
                     return;
                 }
 
                 enemy.TakeTurn(() =>
                 {
-                    LogToFile($"Enemy at {enemy.GridPosition} finished move. Processing next enemy...");
+                    //LogToFile($"Enemy at {enemy.GridPosition} finished move. Processing next enemy...");
                     gameManager.ScheduleDelayedAction(0.5f, () => ProcessNextEnemy(index + 1));
                 });
             }
@@ -121,7 +121,7 @@ namespace Object_Oriented_Map_System.Managers
 
         private void EndEnemyTurn()
         {
-            LogToFile("Enemy turn ended. Switching back to Player Turn.");
+            //LogToFile("Enemy turn ended. Switching back to Player Turn.");
             CurrentTurn = TurnState.PlayerTurn;
             StartPlayerTurn();
         }
