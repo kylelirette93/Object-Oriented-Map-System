@@ -17,7 +17,8 @@ namespace Object_Oriented_Map_System.Managers
     public enum GameState
     {
         Normal,
-        FireballAiming
+        FireballAiming,
+        BombAiming
     }
 
     public class GameManager
@@ -29,6 +30,7 @@ namespace Object_Oriented_Map_System.Managers
         private Texture2D enemyTexture;
         private Texture2D openExitTexture;
         public Texture2D fireballTexture;
+        private Texture2D lightningScrollTexture;
         private Vector2 playerPosition;
         private Point playerGridPosition;
         private KeyboardState previousKeyboardState;
@@ -63,6 +65,12 @@ namespace Object_Oriented_Map_System.Managers
 
         public List<Fireball> ActiveFireballs { get; private set; } = new List<Fireball>();
 
+        public Texture2D bombTexture;
+        public List<BombProjectile> ActiveBombs { get; private set; } = new List<BombProjectile>();
+        private BombItem activeBomb;
+
+        public List<ExplosionEffect> ActiveExplosions { get; private set; } = new List<ExplosionEffect>();
+
         public GameManager(GraphicsDeviceManager graphics, ContentManager content)
         {
             _graphics = graphics;
@@ -87,6 +95,8 @@ namespace Object_Oriented_Map_System.Managers
             whiteTexture.SetData(new Color[] { Color.White });
             healthPotionTexture = _content.Load<Texture2D>("HealthPotion");
             fireballTexture = _content.Load<Texture2D>("FireballScroll");
+            lightningScrollTexture = _content.Load<Texture2D>("LightningScroll");
+            bombTexture = _content.Load<Texture2D>("Bomb");
 
             gameMap.LoadContent(_content);
 
@@ -181,6 +191,37 @@ namespace Object_Oriented_Map_System.Managers
             }
         }
 
+        public void EnterBombAimingMode(BombItem bomb)
+        {
+            if (bomb == null) return;
+            gameState = GameState.BombAiming;
+            activeBomb = bomb;
+            LogToFile("Player is aiming a Bomb. Choose a direction.");
+        }
+
+        private void ExitBombAimingMode()
+        {
+            gameState = GameState.Normal;
+            activeBomb = null;
+        }
+
+        private void HandleBombAiming(KeyboardState currentKeyboardState)
+        {
+            Point direction = Point.Zero;
+
+            if (currentKeyboardState.IsKeyDown(Keys.Up)) direction = new Point(0, -1);
+            if (currentKeyboardState.IsKeyDown(Keys.Down)) direction = new Point(0, 1);
+            if (currentKeyboardState.IsKeyDown(Keys.Left)) direction = new Point(-1, 0);
+            if (currentKeyboardState.IsKeyDown(Keys.Right)) direction = new Point(1, 0);
+
+            if (direction != Point.Zero && activeBomb != null)
+            {
+                activeBomb.ThrowBomb(this, direction);
+                ExitBombAimingMode();
+                turnManager.EndPlayerTurn();
+            }
+        }
+
         public void Update(GameTime gameTime)
         {
             RemoveQueuedEnemies();
@@ -214,10 +255,14 @@ namespace Object_Oriented_Map_System.Managers
             KeyboardState currentKeyboardState = Keyboard.GetState();
             HandleItemUsage(currentKeyboardState);
 
-            // Prioritize fireball aiming mode
+            // Prioritize aiming modes
             if (gameState == GameState.FireballAiming)
             {
                 HandleFireballAiming(currentKeyboardState);
+            }
+            else if (gameState == GameState.BombAiming)
+            {
+                HandleBombAiming(currentKeyboardState);
             }
             else if (playerCanMove && turnManager.IsPlayerTurn())
             {
@@ -230,6 +275,25 @@ namespace Object_Oriented_Map_System.Managers
                 if (!ActiveFireballs[i].IsActive)
                 {
                     ActiveFireballs.RemoveAt(i);
+                }
+            }
+
+            for (int i = ActiveBombs.Count - 1; i >= 0; i--)
+            {
+                ActiveBombs[i].Update();
+                if (!ActiveBombs[i].IsActive)
+                {
+                    ActiveBombs.RemoveAt(i);
+                }
+            }
+
+            // Update explosions
+            for (int i = ActiveExplosions.Count - 1; i >= 0; i--)
+            {
+                ActiveExplosions[i].Update(gameTime);
+                if (!ActiveExplosions[i].IsActive)
+                {
+                    ActiveExplosions.RemoveAt(i);
                 }
             }
 
@@ -277,6 +341,17 @@ namespace Object_Oriented_Map_System.Managers
                 fireball.Draw(spriteBatch, gameMap.TileWidth, gameMap.TileHeight);
             }
 
+            foreach (var bomb in ActiveBombs)
+            {
+                bomb.Draw(spriteBatch, gameMap.TileWidth, gameMap.TileHeight);
+            }
+
+            // Draw explosions on top of tiles
+            foreach (var explosion in ActiveExplosions)
+            {
+                explosion.Draw(spriteBatch, whiteTexture, gameMap.TileWidth, gameMap.TileHeight);
+            }
+
             foreach (var damageText in damageTexts)
             {
                 damageText.Draw(spriteBatch);
@@ -291,6 +366,12 @@ namespace Object_Oriented_Map_System.Managers
             {
                 spriteBatch.Begin();
                 spriteBatch.DrawString(damageFont, "Choose Fireball Direction (Arrow Keys)", new Vector2(10, 90), Color.Red);
+                spriteBatch.End();
+            }
+            else if (gameState == GameState.BombAiming)
+            {
+                spriteBatch.Begin();
+                spriteBatch.DrawString(damageFont, "Choose Bomb Direction (Arrow Keys)", new Vector2(10, 90), Color.Orange);
                 spriteBatch.End();
             }
 
@@ -557,7 +638,7 @@ namespace Object_Oriented_Map_System.Managers
                 Point spawnPoint = availableTiles[index];
                 availableTiles.RemoveAt(index);
 
-                int itemType = rand.Next(2); // 0 for HealthPotion, 1 for FireballScroll
+                int itemType = rand.Next(4); // 0 for HealthPotion, 1 for FireballScroll, 2 for LightningScroll, 3 for Bomb
 
                 if (itemType == 0)
                 {
@@ -565,11 +646,23 @@ namespace Object_Oriented_Map_System.Managers
                     Items.Add(healthPotion);
                     LogToFile($"Spawned HealthPotion at {spawnPoint}");
                 }
-                else
+                else if (itemType == 1)
                 {
                     var fireballScroll = new FireballScroll(fireballTexture, spawnPoint);
                     Items.Add(fireballScroll);
                     LogToFile($"Spawned FireballScroll at {spawnPoint}");
+                }
+                else if (itemType == 2)
+                {
+                    var lightningScroll = new LightningScroll(lightningScrollTexture, spawnPoint);
+                    Items.Add(lightningScroll);
+                    LogToFile($"Spawned LightningScroll at {spawnPoint}");
+                }
+                else
+                {
+                    var bomb = new BombItem(bombTexture, spawnPoint);
+                    Items.Add(bomb);
+                    LogToFile($"Spawned BombItem at {spawnPoint}");
                 }
             }
         }
