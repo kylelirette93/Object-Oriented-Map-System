@@ -16,12 +16,9 @@ namespace Object_Oriented_Map_System.Managers
 {
     public enum GameState
     {
-        TitleScreen,
         Normal,
         FireballAiming,
         BombAiming,
-        Victory,
-        Defeat
     }
 
     public class GameManager
@@ -41,6 +38,15 @@ namespace Object_Oriented_Map_System.Managers
         private KeyboardState previousKeyboardState;
         public Action OnPlayerDeath;
         public int CurrentStage { get; private set; } = 1;
+
+        private bool isFadingOut = false;
+        private float fadeTimer = 0f;
+        private float fadeDuration = 3f;
+        private float playerAlpha = 1f;
+        public bool IsFadeComplete => isFadingOut && fadeTimer >= fadeDuration;
+
+        // This will be set by Game1 when the fade is done
+        public Action OnFadeComplete;
 
         private SpriteFont damageFont;
         private List<DamageText> damageTexts = new List<DamageText>();
@@ -320,7 +326,21 @@ namespace Object_Oriented_Map_System.Managers
                 LoadNextMap();
             }
 
-            CheckExitTile();       
+            CheckExitTile();
+
+            if (isFadingOut)
+            {
+                fadeTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                playerAlpha = MathHelper.Lerp(1f, 0f, fadeTimer / fadeDuration);
+
+                if (fadeTimer >= fadeDuration)
+                {
+                    playerAlpha = 0f;
+                    isFadingOut = false;
+
+                    OnFadeComplete?.Invoke(); // Notify Game1
+                }
+            }
 
             previousKeyboardState = currentKeyboardState;
         }
@@ -374,7 +394,7 @@ namespace Object_Oriented_Map_System.Managers
                 damageText.Draw(spriteBatch);
             }
 
-            spriteBatch.Draw(playerTexture, playerPosition, null, Color.White, 0f,
+            spriteBatch.Draw(playerTexture, playerPosition, null, Color.White * playerAlpha, 0f,
                 new Vector2(playerTexture.Width / 2, playerTexture.Height / 2),
                 Vector2.One, SpriteEffects.None, 0f);
             spriteBatch.End();
@@ -545,6 +565,9 @@ namespace Object_Oriented_Map_System.Managers
         {
             //LogToFile("Player has died! Game Over.");
             OnPlayerDeath?.Invoke();
+            isFadingOut = true;
+            fadeTimer = 0f;
+            playerAlpha = 1f;
         }
 
         public void PlayerTakeDamage(int damage)

@@ -49,6 +49,11 @@ namespace Object_Oriented_Map_System
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             uiFont = Content.Load<SpriteFont>("DamageFont");
             gameManager.LoadContent();
+
+            gameManager.OnFadeComplete = () =>
+            {
+                currentGameState = MainGameState.GameOver;
+            };
         }
 
         protected override void Update(GameTime gameTime)
@@ -71,6 +76,10 @@ namespace Object_Oriented_Map_System
                         currentGameState = MainGameState.Playing;
                         gameManager = new GameManager(_graphics, Content);
                         gameManager.OnPlayerDeath = () =>
+                        {
+                            currentGameState = MainGameState.GameOver;
+                        };
+                        gameManager.OnFadeComplete = () =>
                         {
                             currentGameState = MainGameState.GameOver;
                         };
@@ -155,6 +164,10 @@ namespace Object_Oriented_Map_System
             currentGameState = MainGameState.Playing;
             gameManager = new GameManager(_graphics, Content);
             gameManager.OnPlayerDeath = () =>
+            {
+                currentGameState = MainGameState.GameOver;
+            };
+            gameManager.OnFadeComplete = () =>
             {
                 currentGameState = MainGameState.GameOver;
             };
