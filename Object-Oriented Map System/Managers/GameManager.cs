@@ -16,9 +16,12 @@ namespace Object_Oriented_Map_System.Managers
 {
     public enum GameState
     {
+        TitleScreen,
         Normal,
         FireballAiming,
-        BombAiming
+        BombAiming,
+        Victory,
+        Defeat
     }
 
     public class GameManager
@@ -36,6 +39,8 @@ namespace Object_Oriented_Map_System.Managers
         private Vector2 playerPosition;
         private Point playerGridPosition;
         private KeyboardState previousKeyboardState;
+        public Action OnPlayerDeath;
+        public int CurrentStage { get; private set; } = 1;
 
         private SpriteFont damageFont;
         private List<DamageText> damageTexts = new List<DamageText>();
@@ -399,6 +404,15 @@ namespace Object_Oriented_Map_System.Managers
             Vector2 inventoryPosition = new Vector2(10, 50); // Slightly below health bar
             PlayerInventory.Draw(spriteBatch, damageFont, inventoryPosition, whiteTexture);
 
+            // Stage Numbers
+            string stageText = $"Stage: {CurrentStage}";
+            Vector2 stageSize = damageFont.MeasureString(stageText);
+            Vector2 stagePosition = new Vector2(
+                _graphics.PreferredBackBufferWidth - stageSize.X - 10, // 10px padding from right
+                10 // top padding
+            );
+            spriteBatch.DrawString(damageFont, stageText, stagePosition, Color.Black);
+
             spriteBatch.End();
         }
 
@@ -418,6 +432,8 @@ namespace Object_Oriented_Map_System.Managers
 
         private void LoadNextMap()
         {
+            CurrentStage++;
+
             if (currentPremadeMapIndex < premadeMapFiles.Count)
             {
                 LoadPremadeMap(premadeMapFiles[currentPremadeMapIndex]);
@@ -528,6 +544,7 @@ namespace Object_Oriented_Map_System.Managers
         private void HandlePlayerDeath()
         {
             //LogToFile("Player has died! Game Over.");
+            OnPlayerDeath?.Invoke();
         }
 
         public void PlayerTakeDamage(int damage)
