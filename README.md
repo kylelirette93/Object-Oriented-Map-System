@@ -3,7 +3,7 @@ This is a 2D RPG-like game I'm making in monogame.
 # Sprint 4 Changes and Messages
 With this sprint I've added a working Title Screen with the options to play or quit the game as well as a game over screen with the options to restart or quit to the menu. For some visual polish I also added a counter to the top right that shows you what stage your on so you can track how far you've come. There's also a slight fade out of the player character when the player dies to showcase that. The gameflow for it runs with starting at the Title screen, hitting play to start the game and then playing levels until you die.
 ## Updates/Fixes from last sprint
-Player can now die instead of running around after health hits 0, when health reaches zero the game triggers the game-over state and brings up the menu for it. Enemies should no longer be taking multiple turns at oncedidn't actually get fixed?)
+Player can now die instead of running around after health hits 0, when health reaches zero the game triggers the game-over state and brings up the menu for it. Enemies should no longer be taking multiple turns at once (didn't actually get fixed?)
 ## Fixes for next sprint - (Ran out of time or couldn't figure them out)
 First enemy turn movement is still causing issues occasionally and moving when they shouldn't, Fireball scroll can't kill ghost(potentially because the check for scroll effects is in the FireballScroll script and not the Fireball Script), Game is drawn quite small - need to draw it bigger so it's easier to see. Ran out of time and couldn't get the Boss in a working state so it was left out of project. Wizard can sometimes attack twice if your in range or you throw an item in their direction. Sometime enemies move more than once in a turn.
 
