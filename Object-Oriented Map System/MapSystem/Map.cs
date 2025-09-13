@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Object_Oriented_Map_System.MapSystem.Tiles;
+using System.Diagnostics;
 
 namespace Object_Oriented_Map_System.MapSystem
 {
@@ -28,6 +29,7 @@ namespace Object_Oriented_Map_System.MapSystem
         private Texture2D nonWalkableTexture;
         private Texture2D exitTexture;
         public Texture2D openExitTexture;
+        private Texture2D shopTexture;
 
         public Point SpawnPoint { get; private set; }
 
@@ -44,6 +46,7 @@ namespace Object_Oriented_Map_System.MapSystem
             nonWalkableTexture = content.Load<Texture2D>("wallTile");
             exitTexture = content.Load<Texture2D>("exitTile");
             openExitTexture = content.Load<Texture2D>("OpenExitTile");
+            shopTexture = content.Load<Texture2D>("shopTile");
 
             tileWidth = walkableTexture.Width;
             tileHeight = walkableTexture.Height;
@@ -59,6 +62,9 @@ namespace Object_Oriented_Map_System.MapSystem
             int exitCount = rand.Next(2, 5);
 
             List<Point> exitPositions = new List<Point>();
+
+            // Kyle -- I added a list here for shop positions.
+            List<Point> shopPositions = new List<Point>();
             List<int> selectedWalls = new List<int>();
             while (selectedWalls.Count < exitCount)
             {
@@ -123,12 +129,32 @@ namespace Object_Oriented_Map_System.MapSystem
                 }
             }
 
+            // Addition to original project added by Kyle. I'm ensuring there is enough walkable tiles to place shops.
+            // If so I'll place them randomly.
+            int numberOfShops = 3;
+
+            if (walkableTiles.Count >= numberOfShops)
+            {
+                for (int i = 0; i < numberOfShops; i++) // Use a for loop to place a fixed number of shops
+                {
+                    int randomIndex = rand.Next(walkableTiles.Count);
+                    Point shopPoint = walkableTiles[randomIndex];
+                    shopPositions.Add(shopPoint);
+
+                    Vector2 position = new Vector2(shopPoint.X * tileWidth, shopPoint.Y * tileHeight);
+                    Tiles[shopPoint.Y, shopPoint.X] = new ShopTile(shopTexture, position);
+                    
+
+                    walkableTiles.RemoveAt(randomIndex);
+                }
+            }
+
             if (walkableTiles.Count > 0)
             {
                 SpawnPoint = walkableTiles[rand.Next(walkableTiles.Count)];
             }
 
-            GenerateObstacles(exitPositions);
+            GenerateObstacles(exitPositions, shopPositions);
 
             // Ensure a valid path exists between the spawn point and at least one exit
             if (!ValidatePathExists())
@@ -139,7 +165,7 @@ namespace Object_Oriented_Map_System.MapSystem
             }
         }
 
-        private void GenerateObstacles(List<Point> exitPositions)
+        private void GenerateObstacles(List<Point> exitPositions, List<Point> shopPositions)
         {
             Random rand = new Random();
             List<Rectangle> placedObstacles = new List<Rectangle>(); // Track placed obstacles
@@ -181,12 +207,24 @@ namespace Object_Oriented_Map_System.MapSystem
                     {
                         validPlacement = false;
                     }
-
+                    Rectangle exitArea = new Rectangle(x, y, width, height);
                     // **Ensure obstacle does NOT spawn ADJACENT to ExitTiles**
                     foreach (Point exit in exitPositions)
                     {
-                        Rectangle exitArea = new Rectangle(exit.X - 1, exit.Y - 1, 3, 3); // Area 1 tile around exit
+                        exitArea = new Rectangle(exit.X - 1, exit.Y - 1, 3, 3); // Area 1 tile around exit
                         if (newCluster.Intersects(exitArea))
+                        {
+                            validPlacement = false;
+                            break;
+                        }
+                    }
+
+                    // Kyle made a change here to check for shop points before spawning obstacles.
+                    foreach (Point shopPos in shopPositions)
+                    {
+                        Rectangle shopArea = new Rectangle(shopPos.X - 1, shopPos.Y - 1, 3, 3);
+                        // Additionally ensure it doesn't intersect exit area.
+                        if (newCluster.Intersects(shopArea) || shopArea.Intersects(exitArea))
                         {
                             validPlacement = false;
                             break;
@@ -330,6 +368,9 @@ namespace Object_Oriented_Map_System.MapSystem
                             break;
                         case 'E':
                             Tiles[row, col] = new ExitTile(exitTexture, position);
+                            break;
+                        case 'S':
+                            Tiles[row, col] = new NonWalkableTile(shopTexture, position);
                             break;
                         default:
                             //LogToFile($"Unrecognized tile character '{c}' at ({col}, {row}). Defaulting to wall.");
