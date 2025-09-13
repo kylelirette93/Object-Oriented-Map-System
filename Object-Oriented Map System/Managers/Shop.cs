@@ -5,6 +5,7 @@ using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using Object_Oriented_Map_System.Entities;
 
 namespace Object_Oriented_Map_System.Managers
@@ -13,18 +14,34 @@ namespace Object_Oriented_Map_System.Managers
 {
         public List<Item> purchasableItems = new List<Item>();
         Item selectedItem;
+        KeyboardState previousKeyboardState;
+        KeyboardState currentKeyboardState;
 
         public void SelectItem()
         {
-            foreach (var item in purchasableItems)
+            currentKeyboardState = Keyboard.GetState();
+            if (currentKeyboardState != previousKeyboardState)
             {
-                // Handle selection of item, if they're displayed.
+                if (currentKeyboardState.IsKeyDown(Keys.NumPad1))
+                {
+                    // Select item 1.
+
+                }
+                if (currentKeyboardState.IsKeyDown(Keys.NumPad2))
+                {
+                    // Select item 2.
+                }
+                if (currentKeyboardState.IsKeyDown(Keys.NumPad3))
+                {
+                    // Select item 3.
+                }
             }
+            currentKeyboardState = previousKeyboardState;
         }
 
         public void DisplayItems()
         {
-            
+            // Display each available item in shop.
         }
 
         public void BuyItem(Item item, GameManager gameManager)
