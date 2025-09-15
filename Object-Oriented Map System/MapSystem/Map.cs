@@ -6,6 +6,7 @@ using System.IO;
 using System.Collections.Generic;
 using Object_Oriented_Map_System.MapSystem.Tiles;
 using System.Diagnostics;
+using Object_Oriented_Map_System.Managers;
 
 namespace Object_Oriented_Map_System.MapSystem
 {
@@ -32,6 +33,9 @@ namespace Object_Oriented_Map_System.MapSystem
         private Texture2D shopTexture;
 
         public Point SpawnPoint { get; private set; }
+
+        // Kyle -- Added a list to track shops placed on map.
+        public List<Shop> PlacedShops = new List<Shop>();
 
         public Map(int rows, int columns)
         {
@@ -140,8 +144,9 @@ namespace Object_Oriented_Map_System.MapSystem
                     int randomIndex = rand.Next(walkableTiles.Count);
                     Point shopPoint = walkableTiles[randomIndex];
                     shopPositions.Add(shopPoint);
-
+                    PlacedShops.Add(new Shop(shopPoint));
                     Vector2 position = new Vector2(shopPoint.X * tileWidth, shopPoint.Y * tileHeight);
+                    
                     Tiles[shopPoint.Y, shopPoint.X] = new ShopTile(shopTexture, position);
                     
 

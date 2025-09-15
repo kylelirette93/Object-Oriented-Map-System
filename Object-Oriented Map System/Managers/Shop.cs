@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Object_Oriented_Map_System.Entities;
@@ -16,7 +17,17 @@ namespace Object_Oriented_Map_System.Managers
         Item selectedItem;
         KeyboardState previousKeyboardState;
         KeyboardState currentKeyboardState;
+        public Point GridPosition { get; set; }
 
+        public Shop(Point gridPos)
+        {
+            GridPosition = gridPos;
+        }
+
+        public void Visit()
+        {
+            DisplayItems();
+        }
         public void SelectItem()
         {
             currentKeyboardState = Keyboard.GetState();
@@ -39,9 +50,11 @@ namespace Object_Oriented_Map_System.Managers
             currentKeyboardState = previousKeyboardState;
         }
 
+
         public void DisplayItems()
         {
             // Display each available item in shop.
+            Console.WriteLine("Visited shop! Yay...");
         }
 
         public void BuyItem(Item item, GameManager gameManager)

@@ -52,7 +52,7 @@ namespace Object_Oriented_Map_System.Entities
 
                 // Remove scroll from inventory and end the turn
                 gameManager.player.PlayerInventory.RemoveItem(this);
-                gameManager.turnManager.EndPlayerTurn();
+                TurnManager.Instance.EndPlayerTurn();
                 LogToFile("Player used Lightning Scroll. All visible enemies were struck!");
             }
         }

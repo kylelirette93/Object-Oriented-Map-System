@@ -40,7 +40,7 @@ namespace Object_Oriented_Map_System.Entities
 
             // Remove the bomb from inventory and end the player's turn
             gameManager.player.PlayerInventory.RemoveItem(this);
-            gameManager.turnManager.EndPlayerTurn();
+            TurnManager.Instance.EndPlayerTurn();
             LogToFile("Bomb thrown!");
         }
 

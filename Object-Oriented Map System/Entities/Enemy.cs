@@ -36,7 +36,7 @@ namespace Object_Oriented_Map_System.Entities
 
         public virtual void TakeTurn(Action onComplete)
         {
-            if (!gameManager.turnManager.IsEnemyTurn())
+            if (!TurnManager.Instance.IsEnemyTurn())
             {
                // LogToFile($"ERROR: Enemy at {GridPosition} tried to move outside EnemyTurn!");
                 return;

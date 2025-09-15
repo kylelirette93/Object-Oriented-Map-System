@@ -10,6 +10,8 @@ using Object_Oriented_Map_System.MapSystem;
 using Object_Oriented_Map_System.MapSystem.Tiles;
 using Object_Oriented_Map_System.Entities; 
 using Microsoft.Xna.Framework.Audio;
+using System.ComponentModel.Design;
+using System.Runtime.CompilerServices;
 
 
 namespace Object_Oriented_Map_System.Managers
@@ -32,7 +34,6 @@ namespace Object_Oriented_Map_System.Managers
         private Texture2D openExitTexture;
         public Texture2D fireballTexture;
         private Texture2D lightningScrollTexture;
-        private KeyboardState previousKeyboardState;
         public int CurrentStage { get; private set; } = 1;
 
         private bool isFadingOut = false;
@@ -52,12 +53,9 @@ namespace Object_Oriented_Map_System.Managers
         private const int requiredRows = 10;
         private const int requiredColumns = 15;
 
-        public TurnManager turnManager { get; private set; }
         public List<Enemy> Enemies { get; private set; } = new List<Enemy>();
         private List<Enemy> enemiesToRemove = new List<Enemy>(); // New list to track dead enemies
         private TurnState lastLoggedState = TurnState.PlayerTurn;
-
-        private List<(float TimeRemaining, Action Callback)> delayedActions = new List<(float, Action)>();
 
         private Texture2D whiteTexture;
 
@@ -75,20 +73,25 @@ namespace Object_Oriented_Map_System.Managers
 
         public List<ExplosionEffect> ActiveExplosions { get; private set; } = new List<ExplosionEffect>();
 
+        InputManager input;
+
         public bool LastAttackWasScroll {  get; set; }
 
         public Player player;
 
+        // Kyle - Made the game manager accessible from anywhere.
+        public static GameManager Instance;
+      
         public GameManager(GraphicsDeviceManager graphics, ContentManager content)
         {
+            Instance = this;
             _graphics = graphics;
             _content = content;
             gameMap = new Map(requiredRows, requiredColumns);
-            previousKeyboardState = Keyboard.GetState();
+            input = new InputManager();
             player = new Player(content);
             player.PlayerHealth.OnHealthChanged += () => LogToFile($"Player took damage. Health: {player.PlayerHealth.CurrentHealth}");
             player.PlayerHealth.OnDeath += HandlePlayerDeath;
-            turnManager = new TurnManager(this);
         }
 
         public void LoadContent()
@@ -137,12 +140,12 @@ namespace Object_Oriented_Map_System.Managers
                 SpawnItems(3);
             }
 
-            turnManager.StartPlayerTurn();
+            TurnManager.Instance.StartPlayerTurn();
         }
 
         public void ScheduleDelayedAction(float delay, Action action)
         {
-            delayedActions.Add((delay, action));
+            input.delayedActions.Add((delay, action));
         }
 
         public void QueueEnemyForRemoval(Enemy enemy)
@@ -194,7 +197,7 @@ namespace Object_Oriented_Map_System.Managers
             {
                 activeFireball.CastFireball(this, direction);
                 ExitFireballAimingMode();
-                turnManager.EndPlayerTurn();
+                TurnManager.Instance.EndPlayerTurn();
             }
         }
 
@@ -225,7 +228,7 @@ namespace Object_Oriented_Map_System.Managers
             {
                 activeBomb.ThrowBomb(this, direction);
                 ExitBombAimingMode();
-                turnManager.EndPlayerTurn();
+                TurnManager.Instance.EndPlayerTurn();
             }
         }
 
@@ -240,19 +243,19 @@ namespace Object_Oriented_Map_System.Managers
             RemoveQueuedEnemies();
 
             // Process scheduled actions with delays
-            for (int i = delayedActions.Count - 1; i >= 0; i--)
+            for (int i = input.delayedActions.Count - 1; i >= 0; i--)
             {
-                var (timeRemaining, callback) = delayedActions[i];
+                var (timeRemaining, callback) = input.delayedActions[i];
                 timeRemaining -= (float)gameTime.ElapsedGameTime.TotalSeconds;
 
                 if (timeRemaining <= 0)
                 {
                     callback.Invoke();
-                    delayedActions.RemoveAt(i);
+                    input.delayedActions.RemoveAt(i);
                 }
                 else
                 {
-                    delayedActions[i] = (timeRemaining, callback); // Update remaining time
+                    input.delayedActions[i] = (timeRemaining, callback); // Update remaining time
                 }
             }
 
@@ -277,7 +280,7 @@ namespace Object_Oriented_Map_System.Managers
             {
                 HandleBombAiming(currentKeyboardState);
             }
-            else if (player.PlayerCanMove && turnManager.IsPlayerTurn())
+            else if (player.PlayerCanMove && TurnManager.Instance.IsPlayerTurn())
             {
                 HandlePlayerTurn(currentKeyboardState);
             }
@@ -333,7 +336,8 @@ namespace Object_Oriented_Map_System.Managers
                 }
             }
 
-            previousKeyboardState = currentKeyboardState;
+            // Kyle - Set state in input manager.
+            input.SetState(currentKeyboardState);
         }
 
         // Kyle -- Commented out because it wasn't ever called to begijn with.
@@ -463,22 +467,33 @@ namespace Object_Oriented_Map_System.Managers
 
         public void HandlePlayerTurn(KeyboardState currentKeyboardState)
         {
-            if (!turnManager.IsPlayerTurn()) return; // Prevents movement during enemy turns
+            if (!TurnManager.Instance.IsPlayerTurn()) return; // Prevents movement during enemy turns
 
             Point targetPosition = player.PlayerGridPosition;
 
-            if (currentKeyboardState.IsKeyDown(Keys.Up) && !previousKeyboardState.IsKeyDown(Keys.Up))
+            // Kyle - Get the keyboard state from the input manager.
+            input.GetState(out currentKeyboardState);
+
+            if (currentKeyboardState.IsKeyDown(Keys.Up) && !input.PreviousKeyboardState.IsKeyDown(Keys.Up))
                 targetPosition.Y -= 1;
-            if (currentKeyboardState.IsKeyDown(Keys.Down) && !previousKeyboardState.IsKeyDown(Keys.Down))
+            if (currentKeyboardState.IsKeyDown(Keys.Down) && !input.PreviousKeyboardState.IsKeyDown(Keys.Down))
                 targetPosition.Y += 1;
-            if (currentKeyboardState.IsKeyDown(Keys.Left) && !previousKeyboardState.IsKeyDown(Keys.Left))
+            if (currentKeyboardState.IsKeyDown(Keys.Left) && !input.PreviousKeyboardState.IsKeyDown(Keys.Left))
                 targetPosition.X -= 1;
-            if (currentKeyboardState.IsKeyDown(Keys.Right) && !previousKeyboardState.IsKeyDown(Keys.Right))
+            if (currentKeyboardState.IsKeyDown(Keys.Right) && !input.PreviousKeyboardState.IsKeyDown(Keys.Right))
                 targetPosition.X += 1;
 
             if (targetPosition != player.PlayerGridPosition)
             {
                 Enemy enemyAtTarget = Enemies.FirstOrDefault(e => e.GridPosition == targetPosition && e.IsAlive);
+
+                Shop shopAtTarget = gameMap.PlacedShops
+                .FirstOrDefault(shop => shop.GridPosition.Equals(targetPosition));
+                if (shopAtTarget != null)
+                {
+                    shopAtTarget.Visit();
+                    LogToFile("Player entered a shop.");
+                }
 
                 if (enemyAtTarget != null)
                 {
@@ -500,7 +515,7 @@ namespace Object_Oriented_Map_System.Managers
                         CheckExitTile(); // Ensure the exit updates
                     }
 
-                    turnManager.EndPlayerTurn();
+                    TurnManager.Instance.EndPlayerTurn();
                 }
                 else if (IsCellAccessible(targetPosition.X, targetPosition.Y))
                 {
@@ -511,10 +526,9 @@ namespace Object_Oriented_Map_System.Managers
                         player.PlayerGridPosition.Y * gameMap.TileHeight + gameMap.TileHeight / 2
                     );
 
-                    turnManager.EndPlayerTurn(); // End turn after movement
+                    TurnManager.Instance.EndPlayerTurn(); // End turn after movement
                 }
             }
-
             Item itemAtTarget = Items.FirstOrDefault(item => item.GridPosition == targetPosition && !item.IsPickedUp);
 
             if (itemAtTarget != null)
@@ -529,7 +543,7 @@ namespace Object_Oriented_Map_System.Managers
             for (int i = 0; i < 5; i++)
             {
                 Keys key = Keys.D1 + i; // Keys 1-5
-                if (currentKeyboardState.IsKeyDown(key) && !previousKeyboardState.IsKeyDown(key))
+                if (currentKeyboardState.IsKeyDown(key) && !input.PreviousKeyboardState.IsKeyDown(key))
                 {
                     // Ensure the index is within the inventory size
                     if (player.PlayerInventory.Items.Count > i)
@@ -585,6 +599,7 @@ namespace Object_Oriented_Map_System.Managers
             Tile destinationTile = gameMap.Tiles[row, col];
 
             if (destinationTile is OpenExitTile) return true;
+            if (destinationTile is ShopTile) return true;
             if (destinationTile is ExitTile) return false;
 
             return destinationTile != null && destinationTile.Walkable;

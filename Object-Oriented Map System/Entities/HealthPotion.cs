@@ -33,7 +33,7 @@ namespace Object_Oriented_Map_System.Entities
                     gameManager.player.PlayerHealth.Heal(healAmount);
                     LogToFile($"Player used HealthPotion and healed {healAmount} HP.");
                     gameManager.player.PlayerInventory.RemoveItem(this);
-                    gameManager.turnManager.EndPlayerTurn();
+                    TurnManager.Instance.EndPlayerTurn();
                 }
                 else
                 {

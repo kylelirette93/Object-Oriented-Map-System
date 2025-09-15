@@ -17,7 +17,7 @@ namespace Object_Oriented_Map_System.Entities
 
         public override void TakeTurn(Action onComplete)
         {
-            if (!IsAlive || gameManager.turnManager.IsPlayerTurn())
+            if (!IsAlive || TurnManager.Instance.IsPlayerTurn())
             {
                 onComplete?.Invoke();
                 return;
