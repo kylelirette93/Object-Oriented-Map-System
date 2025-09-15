@@ -57,7 +57,7 @@ namespace Object_Oriented_Map_System.Managers
         private List<Enemy> enemiesToRemove = new List<Enemy>(); // New list to track dead enemies
         private TurnState lastLoggedState = TurnState.PlayerTurn;
 
-        private Texture2D whiteTexture;
+        public static Texture2D whiteTexture;
 
         public List<Item> Items { get; private set; } = new List<Item>();
         private Texture2D healthPotionTexture;
@@ -390,6 +390,7 @@ namespace Object_Oriented_Map_System.Managers
                 damageText.Draw(spriteBatch);
             }
 
+
             player.Draw(spriteBatch);
             spriteBatch.End();
 
@@ -425,6 +426,12 @@ namespace Object_Oriented_Map_System.Managers
                 _graphics.PreferredBackBufferWidth - stageSize.X - 10, // 10px padding from right
                 10 // top padding
             );
+
+            foreach (var shop in gameMap.PlacedShops)
+            {
+                if (shop.IsVisited)
+                shop.Draw(spriteBatch);
+            }
             spriteBatch.DrawString(damageFont, stageText, stagePosition, Color.Black);
 
             spriteBatch.End();
@@ -491,6 +498,7 @@ namespace Object_Oriented_Map_System.Managers
                 .FirstOrDefault(shop => shop.GridPosition.Equals(targetPosition));
                 if (shopAtTarget != null)
                 {
+                    shopAtTarget.LoadContent(_content);
                     shopAtTarget.Visit();
                     LogToFile("Player entered a shop.");
                 }

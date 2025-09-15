@@ -89,6 +89,27 @@ namespace Object_Oriented_Map_System.Entities
             }
         }
 
+        public void Draw(SpriteBatch spriteBatch, SpriteFont font, Vector2 position, Texture2D whiteTexture, int maxSlots)
+        {
+            for (int i = 0; i < maxSlots; i++)
+            {
+                // Draw inventory slots as rectangles
+                Rectangle slotRect = new Rectangle((int)position.X + i * 40, (int)position.Y, 32, 32);
+
+                // Draw a grey border
+                spriteBatch.Draw(whiteTexture, new Rectangle(slotRect.X - 2, slotRect.Y - 2, 36, 36), Color.DarkGray);
+
+                // Draw a white rectangle for the slot background
+                spriteBatch.Draw(whiteTexture, slotRect, Color.LightGray);
+
+                // Draw the item if it exists
+                if (i < Items.Count)
+                {
+                    spriteBatch.Draw(Items[i].Texture, slotRect, Color.White);
+                }
+            }
+        }
+
 
 
         private void LogToFile(string message)
