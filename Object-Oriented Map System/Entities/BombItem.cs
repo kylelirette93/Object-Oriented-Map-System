@@ -18,12 +18,12 @@ namespace Object_Oriented_Map_System.Entities
         public override void OnPickup(GameManager gameManager)
         {
             base.OnPickup(gameManager);
-            gameManager.PlayerInventory.AddItem(this);
+            gameManager.player.PlayerInventory.AddItem(this);
         }
 
         public override void Use(GameManager gameManager)
         {
-            if (gameManager.PlayerHealth.IsAlive)
+            if (gameManager.player.PlayerHealth.IsAlive)
             {
                 gameManager.EnterBombAimingMode(this);
                 LogToFile("Player used Bomb. Choose a direction to throw it.");
@@ -32,14 +32,14 @@ namespace Object_Oriented_Map_System.Entities
 
         public void ThrowBomb(GameManager gameManager, Point direction)
         {
-            Point startPosition = gameManager.PlayerGridPosition;
+            Point startPosition = gameManager.player.PlayerGridPosition;
 
             // Create a BombProjectile and add it to the active list
             BombProjectile bombProjectile = new BombProjectile(gameManager.bombTexture, startPosition, direction, Damage, gameManager);
             gameManager.ActiveBombs.Add(bombProjectile);
 
             // Remove the bomb from inventory and end the player's turn
-            gameManager.PlayerInventory.RemoveItem(this);
+            gameManager.player.PlayerInventory.RemoveItem(this);
             gameManager.turnManager.EndPlayerTurn();
             LogToFile("Bomb thrown!");
         }

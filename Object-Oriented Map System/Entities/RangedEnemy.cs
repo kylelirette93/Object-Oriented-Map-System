@@ -48,7 +48,7 @@ namespace Object_Oriented_Map_System.Entities
 
         private bool CanSeePlayer()
         {
-            Point playerPosition = gameManager.PlayerGridPosition;
+            Point playerPosition = gameManager.player.PlayerGridPosition;
 
             // Check if the player is on the same row or column
             if (GridPosition.X != playerPosition.X && GridPosition.Y != playerPosition.Y)
@@ -79,7 +79,7 @@ namespace Object_Oriented_Map_System.Entities
         private void ShootProjectile()
         {
             Point direction = Point.Zero;
-            Point playerPosition = gameManager.PlayerGridPosition;
+            Point playerPosition = gameManager.player.PlayerGridPosition;
 
             if (GridPosition.X == playerPosition.X)
             {

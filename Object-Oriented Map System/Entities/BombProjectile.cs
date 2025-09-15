@@ -86,12 +86,12 @@ namespace Object_Oriented_Map_System.Entities
                         }
 
                         // Damage player if within range
-                        if (explosionPoint == gameManager.PlayerGridPosition)
+                        if (explosionPoint == gameManager.player.PlayerGridPosition)
                         {
                             gameManager.PlayerTakeDamage(damage);
                             Vector2 damageTextPosition = new Vector2(
-                                gameManager.PlayerGridPosition.X * gameManager.gameMap.TileWidth + gameManager.gameMap.TileWidth / 2,
-                                gameManager.PlayerGridPosition.Y * gameManager.gameMap.TileHeight
+                                gameManager.player.PlayerGridPosition.X * gameManager.gameMap.TileWidth + gameManager.gameMap.TileWidth / 2,
+                                gameManager.player.PlayerGridPosition.Y * gameManager.gameMap.TileHeight
                             );
                             gameManager.AddDamageText($"-{damage}", damageTextPosition);
                             LogToFile($"Player took {damage} damage from the bomb!");

@@ -18,12 +18,12 @@ namespace Object_Oriented_Map_System.Entities
         public override void OnPickup(GameManager gameManager)
         {
             base.OnPickup(gameManager);
-            gameManager.PlayerInventory.AddItem(this);
+            gameManager.player.PlayerInventory.AddItem(this);
         }
 
         public override void Use(GameManager gameManager)
         {
-            if (gameManager.PlayerHealth.IsAlive)
+            if (gameManager.player.PlayerHealth.IsAlive)
             {
                 gameManager.LastAttackWasScroll = true; // Mark as a scroll attack
                 // Deal damage to all enemies on the map
@@ -51,7 +51,7 @@ namespace Object_Oriented_Map_System.Entities
                 }
 
                 // Remove scroll from inventory and end the turn
-                gameManager.PlayerInventory.RemoveItem(this);
+                gameManager.player.PlayerInventory.RemoveItem(this);
                 gameManager.turnManager.EndPlayerTurn();
                 LogToFile("Player used Lightning Scroll. All visible enemies were struck!");
             }

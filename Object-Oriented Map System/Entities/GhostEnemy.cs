@@ -32,16 +32,16 @@ namespace Object_Oriented_Map_System.Entities
             }
 
             // Find path to player using ghost's phasing ability
-            Point targetPosition = FindPathToTarget(gameManager.PlayerGridPosition, ignoreWalls: true);
+            Point targetPosition = FindPathToTarget(gameManager.player.PlayerGridPosition, ignoreWalls: true);
 
-            if (targetPosition == gameManager.PlayerGridPosition)
+            if (targetPosition == gameManager.player.PlayerGridPosition)
             {
                 int damage = 1;
-                gameManager.PlayerHealth.TakeDamage(damage);
+                gameManager.player.PlayerHealth.TakeDamage(damage);
 
                 Vector2 damagePosition = new Vector2(
-                    gameManager.PlayerGridPosition.X * gameManager.gameMap.TileWidth + gameManager.gameMap.TileWidth / 2,
-                    gameManager.PlayerGridPosition.Y * gameManager.gameMap.TileHeight
+                    gameManager.player.PlayerGridPosition.X * gameManager.gameMap.TileWidth + gameManager.gameMap.TileWidth / 2,
+                    gameManager.player.PlayerGridPosition.Y * gameManager.gameMap.TileHeight
                 );
                 gameManager.AddDamageText($"-{damage}", damagePosition);
             }

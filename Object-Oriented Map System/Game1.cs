@@ -40,7 +40,7 @@ namespace Object_Oriented_Map_System
         protected override void Initialize()
         {
             gameManager = new GameManager(_graphics, Content);
-            gameManager.OnPlayerDeath = () => currentGameState = MainGameState.GameOver;
+            gameManager.player.OnPlayerDeath = () => currentGameState = MainGameState.GameOver;
             base.Initialize();
         }
 
@@ -75,7 +75,7 @@ namespace Object_Oriented_Map_System
                     {
                         currentGameState = MainGameState.Playing;
                         gameManager = new GameManager(_graphics, Content);
-                        gameManager.OnPlayerDeath = () =>
+                        gameManager.player.OnPlayerDeath = () =>
                         {
                             currentGameState = MainGameState.GameOver;
                         };
@@ -163,7 +163,7 @@ namespace Object_Oriented_Map_System
         {
             currentGameState = MainGameState.Playing;
             gameManager = new GameManager(_graphics, Content);
-            gameManager.OnPlayerDeath = () =>
+            gameManager.player.OnPlayerDeath = () =>
             {
                 currentGameState = MainGameState.GameOver;
             };

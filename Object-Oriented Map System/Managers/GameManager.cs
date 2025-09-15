@@ -26,17 +26,13 @@ namespace Object_Oriented_Map_System.Managers
         private ContentManager _content;
         private GraphicsDeviceManager _graphics;
         public Map gameMap;
-        private Texture2D playerTexture;
         private Texture2D enemyTexture;
         private Texture2D rangedEnemyTexture;
         private Texture2D ghostEnemyTexture;
         private Texture2D openExitTexture;
         public Texture2D fireballTexture;
         private Texture2D lightningScrollTexture;
-        private Vector2 playerPosition;
-        private Point playerGridPosition;
         private KeyboardState previousKeyboardState;
-        public Action OnPlayerDeath;
         public int CurrentStage { get; private set; } = 1;
 
         private bool isFadingOut = false;
@@ -59,15 +55,10 @@ namespace Object_Oriented_Map_System.Managers
         public TurnManager turnManager { get; private set; }
         public List<Enemy> Enemies { get; private set; } = new List<Enemy>();
         private List<Enemy> enemiesToRemove = new List<Enemy>(); // New list to track dead enemies
-        private bool playerCanMove = false; //  Track if player can move
         private TurnState lastLoggedState = TurnState.PlayerTurn;
-        public HealthComponent PlayerHealth { get; private set; }
 
         private List<(float TimeRemaining, Action Callback)> delayedActions = new List<(float, Action)>();
 
-        public Point PlayerGridPosition => playerGridPosition;
-
-        public Inventory PlayerInventory { get; private set; }
         private Texture2D whiteTexture;
 
         public List<Item> Items { get; private set; } = new List<Item>();
@@ -86,23 +77,22 @@ namespace Object_Oriented_Map_System.Managers
 
         public bool LastAttackWasScroll {  get; set; }
 
+        public Player player;
+
         public GameManager(GraphicsDeviceManager graphics, ContentManager content)
         {
             _graphics = graphics;
             _content = content;
             gameMap = new Map(requiredRows, requiredColumns);
             previousKeyboardState = Keyboard.GetState();
+            player = new Player(content);
+            player.PlayerHealth.OnHealthChanged += () => LogToFile($"Player took damage. Health: {player.PlayerHealth.CurrentHealth}");
+            player.PlayerHealth.OnDeath += HandlePlayerDeath;
             turnManager = new TurnManager(this);
-            PlayerInventory = new Inventory();
-
-            PlayerHealth = new HealthComponent(5); // Set player health to 5
-            PlayerHealth.OnHealthChanged += () => LogToFile($"Player took damage. Health: {PlayerHealth.CurrentHealth}");
-            PlayerHealth.OnDeath += HandlePlayerDeath;
         }
 
         public void LoadContent()
         {
-            playerTexture = _content.Load<Texture2D>("player");
             enemyTexture = _content.Load<Texture2D>("rat");
             rangedEnemyTexture = _content.Load<Texture2D>("EvilWizard");
             ghostEnemyTexture = _content.Load<Texture2D>("Ghost");
@@ -287,7 +277,7 @@ namespace Object_Oriented_Map_System.Managers
             {
                 HandleBombAiming(currentKeyboardState);
             }
-            else if (playerCanMove && turnManager.IsPlayerTurn())
+            else if (player.PlayerCanMove && turnManager.IsPlayerTurn())
             {
                 HandlePlayerTurn(currentKeyboardState);
             }
@@ -321,10 +311,11 @@ namespace Object_Oriented_Map_System.Managers
             }
 
             // Ensure exit only works when all enemies are defeated
-            if (gameMap.Tiles[playerGridPosition.Y, playerGridPosition.X] is ExitTile && Enemies.Count == 0)
+            if (gameMap.Tiles[player.PlayerGridPosition.Y, player.PlayerGridPosition.X] is ExitTile && Enemies.Count == 0)
             {
                 LoadNextMap();
             }
+
 
             CheckExitTile();
 
@@ -345,10 +336,11 @@ namespace Object_Oriented_Map_System.Managers
             previousKeyboardState = currentKeyboardState;
         }
 
-        public void AllowPlayerInput(bool canMove)
+        // Kyle -- Commented out because it wasn't ever called to begijn with.
+        /*public void AllowPlayerInput(bool canMove)
         {
             playerCanMove = canMove;
-        }
+        }*/
 
         public void Draw(SpriteBatch spriteBatch)
         {
@@ -394,9 +386,7 @@ namespace Object_Oriented_Map_System.Managers
                 damageText.Draw(spriteBatch);
             }
 
-            spriteBatch.Draw(playerTexture, playerPosition, null, Color.White * playerAlpha, 0f,
-                new Vector2(playerTexture.Width / 2, playerTexture.Height / 2),
-                Vector2.One, SpriteEffects.None, 0f);
+            player.Draw(spriteBatch);
             spriteBatch.End();
 
             if (gameState == GameState.FireballAiming)
@@ -416,13 +406,13 @@ namespace Object_Oriented_Map_System.Managers
             spriteBatch.Begin();
 
             // Draw the player health in the top left corner
-            string healthText = $"Player Health: {PlayerHealth.CurrentHealth} / {PlayerHealth.MaxHealth}";
+            string healthText = $"Player Health: {player.PlayerHealth.CurrentHealth} / {player.PlayerHealth.MaxHealth}";
             Vector2 healthPosition = new Vector2(10, 10); // 10px from top and left corner
             spriteBatch.DrawString(damageFont, healthText, healthPosition, Color.Black);
 
             // Draw the Inventory
             Vector2 inventoryPosition = new Vector2(10, 50); // Slightly below health bar
-            PlayerInventory.Draw(spriteBatch, damageFont, inventoryPosition, whiteTexture);
+            player.PlayerInventory.Draw(spriteBatch, damageFont, inventoryPosition, whiteTexture);
 
             // Stage Numbers
             string stageText = $"Stage: {CurrentStage}";
@@ -475,7 +465,7 @@ namespace Object_Oriented_Map_System.Managers
         {
             if (!turnManager.IsPlayerTurn()) return; // Prevents movement during enemy turns
 
-            Point targetPosition = playerGridPosition;
+            Point targetPosition = player.PlayerGridPosition;
 
             if (currentKeyboardState.IsKeyDown(Keys.Up) && !previousKeyboardState.IsKeyDown(Keys.Up))
                 targetPosition.Y -= 1;
@@ -486,7 +476,7 @@ namespace Object_Oriented_Map_System.Managers
             if (currentKeyboardState.IsKeyDown(Keys.Right) && !previousKeyboardState.IsKeyDown(Keys.Right))
                 targetPosition.X += 1;
 
-            if (targetPosition != playerGridPosition)
+            if (targetPosition != player.PlayerGridPosition)
             {
                 Enemy enemyAtTarget = Enemies.FirstOrDefault(e => e.GridPosition == targetPosition && e.IsAlive);
 
@@ -515,10 +505,10 @@ namespace Object_Oriented_Map_System.Managers
                 else if (IsCellAccessible(targetPosition.X, targetPosition.Y))
                 {
                     // Move only if no enemy is present
-                    playerGridPosition = targetPosition;
-                    playerPosition = new Vector2(
-                        playerGridPosition.X * gameMap.TileWidth + gameMap.TileWidth / 2,
-                        playerGridPosition.Y * gameMap.TileHeight + gameMap.TileHeight / 2
+                    player.PlayerGridPosition = targetPosition;
+                    player.PlayerPosition = new Vector2(
+                        player.PlayerGridPosition.X * gameMap.TileWidth + gameMap.TileWidth / 2,
+                        player.PlayerGridPosition.Y * gameMap.TileHeight + gameMap.TileHeight / 2
                     );
 
                     turnManager.EndPlayerTurn(); // End turn after movement
@@ -542,11 +532,11 @@ namespace Object_Oriented_Map_System.Managers
                 if (currentKeyboardState.IsKeyDown(key) && !previousKeyboardState.IsKeyDown(key))
                 {
                     // Ensure the index is within the inventory size
-                    if (PlayerInventory.Items.Count > i)
+                    if (player.PlayerInventory.Items.Count > i)
                     {
                         // Use the item if it's present in the inventory
                         LogToFile($"Using item at slot {i + 1}");
-                        PlayerInventory.UseItem(i, this);
+                        player.PlayerInventory.UseItem(i, this);
                     }
                     else
                     {
@@ -564,7 +554,7 @@ namespace Object_Oriented_Map_System.Managers
         private void HandlePlayerDeath()
         {
             //LogToFile("Player has died! Game Over.");
-            OnPlayerDeath?.Invoke();
+            player.OnPlayerDeath?.Invoke();
             isFadingOut = true;
             fadeTimer = 0f;
             playerAlpha = 1f;
@@ -572,10 +562,10 @@ namespace Object_Oriented_Map_System.Managers
 
         public void PlayerTakeDamage(int damage)
         {
-            PlayerHealth.TakeDamage(damage);
+            player.PlayerHealth.TakeDamage(damage);
             //LogToFile($"Player took {damage} damage! Health: {PlayerHealth.CurrentHealth}");          
 
-            if (!PlayerHealth.IsAlive)
+            if (!player.PlayerHealth.IsAlive)
             {
                 LogToFile("Player has died. Game Over.");
                 HandlePlayerDeath();
@@ -584,7 +574,7 @@ namespace Object_Oriented_Map_System.Managers
 
         public void SetPlayerCanMove(bool canMove)
         {
-            playerCanMove = canMove;
+            player.PlayerCanMove = canMove;
         }
 
         public bool IsCellAccessible(int col, int row)
@@ -625,10 +615,10 @@ namespace Object_Oriented_Map_System.Managers
 
         private void ResetPlayerPosition()
         {
-            playerGridPosition = gameMap.SpawnPoint; // Use the correct spawn point
-            playerPosition = new Vector2(
-                playerGridPosition.X * gameMap.TileWidth + gameMap.TileWidth / 2,
-                playerGridPosition.Y * gameMap.TileHeight + gameMap.TileHeight / 2);
+            player.PlayerGridPosition = gameMap.SpawnPoint; // Use the correct spawn point
+            player.PlayerPosition = new Vector2(
+                player.PlayerGridPosition.X * gameMap.TileWidth + gameMap.TileWidth / 2,
+                player.PlayerGridPosition.Y * gameMap.TileHeight + gameMap.TileHeight / 2);
         }
 
         private void SpawnEnemies(int count)

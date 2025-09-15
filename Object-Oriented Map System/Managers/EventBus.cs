@@ -16,6 +16,17 @@ namespace Object_Oriented_Map_System.Managers
     /// </summary>
     public class EventBus
 {
+        // Ensure instance can only be assigned to once.
+        private static readonly EventBus instance = new EventBus();
+
+        // Singleton pattern for event bus.
+        public static EventBus Instance
+        {
+            get
+            {
+                return instance;
+            }
+        }
         Dictionary<EventType, List<Action>> eventListeners = new Dictionary<EventType, List<Action>>();
 
         /// <summary>

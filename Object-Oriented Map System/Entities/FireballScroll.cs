@@ -20,12 +20,12 @@ namespace Object_Oriented_Map_System.Entities
         public override void OnPickup(GameManager gameManager)
         {
             base.OnPickup(gameManager);
-            gameManager.PlayerInventory.AddItem(this);
+            gameManager.player.PlayerInventory.AddItem(this);
         }
 
         public override void Use(GameManager gameManager)
         {
-            if (gameManager.PlayerHealth.IsAlive)
+            if (gameManager.player.PlayerHealth.IsAlive)
             {
                 gameManager.LastAttackWasScroll = true; // Mark it as a scroll attack
                 // Trigger the aiming mode for Fireball
@@ -46,14 +46,14 @@ namespace Object_Oriented_Map_System.Entities
         public void CastFireball(GameManager gameManager, Point direction)
         {
             // Create a fireball object at the player's current position
-            Point startPosition = gameManager.PlayerGridPosition;
+            Point startPosition = gameManager.player.PlayerGridPosition;
 
             // Instantiate a Fireball and add it to the active list
             Fireball fireball = new Fireball(gameManager.fireballTexture, startPosition, direction, Damage, gameManager);
             gameManager.ActiveFireballs.Add(fireball);
 
             // Remove the scroll and end the player's turn
-            gameManager.PlayerInventory.RemoveItem(this);
+            gameManager.player.PlayerInventory.RemoveItem(this);
             gameManager.turnManager.EndPlayerTurn();
             LogToFile("Fireball launched!");
         }

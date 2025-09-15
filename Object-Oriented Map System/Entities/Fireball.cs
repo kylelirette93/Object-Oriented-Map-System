@@ -45,7 +45,7 @@ namespace Object_Oriented_Map_System.Entities
             if (isEnemyProjectile)
             {
                 // Enemy fireball hits the player
-                if (gameManager.PlayerGridPosition == position)
+                if (gameManager.player.PlayerGridPosition == position)
                 {
                     gameManager.PlayerTakeDamage(damage);
                     Vector2 damageTextPosition = new Vector2(

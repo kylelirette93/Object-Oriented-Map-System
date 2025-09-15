@@ -60,16 +60,16 @@ namespace Object_Oriented_Map_System.Entities
 
             //LogToFile($"ENEMY TURN: Enemy at {GridPosition} is preparing to move...");
 
-            Point targetPosition = FindPathToTarget(gameManager.PlayerGridPosition);
+            Point targetPosition = FindPathToTarget(gameManager.player.PlayerGridPosition);
 
-            if (targetPosition == gameManager.PlayerGridPosition)
+            if (targetPosition == gameManager.player.PlayerGridPosition)
             {
                 int damage = 1;
-                gameManager.PlayerHealth.TakeDamage(damage);
+                gameManager.player.PlayerHealth.TakeDamage(damage);
 
                 Vector2 damagePosition = new Vector2(
-                    gameManager.PlayerGridPosition.X * gameMap.TileWidth + gameMap.TileWidth / 2,
-                    gameManager.PlayerGridPosition.Y * gameMap.TileHeight - 10  // Slight offset above the player
+                    gameManager.player.PlayerGridPosition.X * gameMap.TileWidth + gameMap.TileWidth / 2,
+                    gameManager.player.PlayerGridPosition.Y * gameMap.TileHeight - 10  // Slight offset above the player
                 );
                 gameManager.AddDamageText($"-{damage}", damagePosition);
 
