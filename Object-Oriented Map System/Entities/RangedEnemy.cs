@@ -95,6 +95,10 @@ namespace Object_Oriented_Map_System.Entities
             LogToFile($"RangedEnemy fired a fireball from {GridPosition} towards {direction}");
         }
 
+        public override void Die()
+        {
+            base.Die();
+        }
         private void LogToFile(string message)
         {
             string logPath = "debug_log.txt";

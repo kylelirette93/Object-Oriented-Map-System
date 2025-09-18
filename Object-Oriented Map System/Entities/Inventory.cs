@@ -13,7 +13,9 @@ namespace Object_Oriented_Map_System.Entities
         private int maxSlots = 5;
 
         // Kyle - Added currency property to track money with shop system.
-        public int Currency { get { return currency; }
+        public int Currency
+        {
+            get { return currency; }
             set
             {
                 if (value < 0)
@@ -24,7 +26,7 @@ namespace Object_Oriented_Map_System.Entities
                 currency = value;
             }
         }
-        int currency = 0;
+        int currency;
 
         public Inventory()
         {
@@ -104,9 +106,6 @@ namespace Object_Oriented_Map_System.Entities
                 // Draw a grey border
                 spriteBatch.Draw(whiteTexture, new Rectangle(slotRect.X - 2, slotRect.Y - 2, 36, 36), Color.DarkGray);
 
-                // Kyle - Added currency display below inventory slots.
-                spriteBatch.DrawString(font, "Money: " + Currency.ToString(), new Vector2(position.X, position.Y + 35), Color.Green);
-
                 // Draw a white rectangle for the slot background
                 spriteBatch.Draw(whiteTexture, slotRect, Color.LightGray);
 
@@ -115,6 +114,9 @@ namespace Object_Oriented_Map_System.Entities
                 {
                     spriteBatch.Draw(Items[i].Texture, slotRect, Color.White);
                 }
+                // Kyle - Added currency display below inventory slots.
+                string currencyText = "Money: " + currency.ToString();
+                spriteBatch.DrawString(font, currencyText, new Vector2(position.X, position.Y + 35), Color.Green);
             }
         }
 

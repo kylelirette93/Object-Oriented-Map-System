@@ -84,6 +84,7 @@ namespace Object_Oriented_Map_System.Managers
 
         public List<Shop> Shops = new List<Shop>();
         Shop activeShop = null;
+        EventBus events = new EventBus();
       
         public GameManager(GraphicsDeviceManager graphics, ContentManager content)
         {
@@ -165,6 +166,8 @@ namespace Object_Oriented_Map_System.Managers
             {
                 foreach (var enemy in enemiesToRemove)
                 {
+                    // Reward player with currency on enemy death
+                    EventBus.Instance.Publish(EventType.EarnCash);
                     Enemies.Remove(enemy);
                     LogToFile($"Removed enemy at {enemy.GridPosition}.");
                 }
@@ -778,7 +781,7 @@ namespace Object_Oriented_Map_System.Managers
             }
         }
 
-        private void LogToFile(string message)
+        public void LogToFile(string message)
         {
             string logPath = "debug_log.txt";
             using (StreamWriter writer = new StreamWriter(logPath, true))

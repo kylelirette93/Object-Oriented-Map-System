@@ -101,14 +101,11 @@ namespace Object_Oriented_Map_System.Entities
             }
         }
 
-        public void Die()
+        public virtual void Die()
         {
             if (!IsAlive) return;
 
-            LogToFile($"Enemy at {GridPosition} has died.");
-
-            // Reward player with currency on enemy death
-            EventBus.Instance.Publish(EventType.EarnCash);
+            Console.WriteLine("Enemy has died.");
 
             // Remove from the game logic immediately
             gameManager.Enemies.Remove(this);

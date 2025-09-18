@@ -4,7 +4,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Object_Oriented_Map_System.Managers;
-
 namespace Object_Oriented_Map_System
 {
     public enum MainGameState
@@ -29,9 +28,13 @@ namespace Object_Oriented_Map_System
         private Rectangle quitButton = new Rectangle(350, 270, 200, 50);
         private Rectangle playAgainButton = new Rectangle(350, 200, 200, 50);
         private Rectangle quitToMenuButton = new Rectangle(350, 270, 200, 50);
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        static extern bool AllocConsole();
 
         public Game1()
         {
+            AllocConsole();
+            Console.WriteLine("Debug console initialized.");
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
