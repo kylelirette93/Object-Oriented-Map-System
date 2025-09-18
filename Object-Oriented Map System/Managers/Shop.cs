@@ -28,6 +28,7 @@ namespace Object_Oriented_Map_System.Managers
         Inventory shopInventory = new Inventory();
         string shopText;
         SpriteFont shopFont;
+        Player player;
 
         public Shop(Point gridPos)
         {
@@ -42,34 +43,53 @@ namespace Object_Oriented_Map_System.Managers
                 healthPotionTexture = content.Load<Texture2D>("HealthPotion");
                 fireballTexture = content.Load<Texture2D>("FireballScroll");
                 shopFont = content.Load<SpriteFont>("DamageFont");
+                PopulateShop();
             }
         }
 
-        public void Visit()
+        public void Visit(Player player)
         {
-            PopulateShop();
+            // Pass reference to player to adjust inventory.
+            this.player = player;
             isVisited = true;
         }
-        public void SelectItem()
+
+        public void Update(GameTime gameTime)
+        {
+            if (player != null && isVisited)
+            {
+                SelectFromItems();
+            }
+        }
+        public void SelectFromItems()
         {
             currentKeyboardState = Keyboard.GetState();
-            if (currentKeyboardState != previousKeyboardState)
+            if (player != null)
             {
-                if (currentKeyboardState.IsKeyDown(Keys.NumPad1))
+                if (currentKeyboardState.IsKeyDown(Keys.D1) && previousKeyboardState.IsKeyUp(Keys.D1))
                 {
-                    // Select item 1.
+                    // Add the item to the player's inventory.
+
+                    BuyItem(shopInventory.GetItem(0));
 
                 }
-                if (currentKeyboardState.IsKeyDown(Keys.NumPad2))
+                else if (currentKeyboardState.IsKeyDown(Keys.D2) && previousKeyboardState.IsKeyUp(Keys.D2))
                 {
                     // Select item 2.
+
+                    BuyItem(shopInventory.GetItem(1));
+
                 }
-                if (currentKeyboardState.IsKeyDown(Keys.NumPad3))
+                else if (currentKeyboardState.IsKeyDown(Keys.D3) && previousKeyboardState.IsKeyUp(Keys.D3))
                 {
                     // Select item 3.
+
+                    BuyItem(shopInventory.GetItem(2));
+
                 }
+                previousKeyboardState = currentKeyboardState;
             }
-            currentKeyboardState = previousKeyboardState;
+            
         }
 
 
@@ -84,14 +104,19 @@ namespace Object_Oriented_Map_System.Managers
             {
                 if (item != null)
                 {
+                    item.IsPickedUp = true;
                     shopInventory.AddItem(item);
                 }
             }
         }
 
-        public void BuyItem(Item item, GameManager gameManager)
+        public void BuyItem(Item item)
         {
-           // handle currency and buying a selected item.
+            if (player.PlayerInventory.Currency >= item.Price)
+            {
+                player.PlayerInventory.Currency -= item.Price;
+                player.PlayerInventory.AddItem(item);
+            }
         }
 
         public void Draw(SpriteBatch spriteBatch)

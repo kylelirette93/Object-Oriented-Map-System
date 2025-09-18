@@ -145,6 +145,7 @@ namespace Object_Oriented_Map_System.MapSystem
                     Point shopPoint = walkableTiles[randomIndex];
                     shopPositions.Add(shopPoint);
                     PlacedShops.Add(new Shop(shopPoint));
+                    GameManager.Instance.Shops.Add(new Shop(shopPoint));
                     Vector2 position = new Vector2(shopPoint.X * tileWidth, shopPoint.Y * tileHeight);
                     
                     Tiles[shopPoint.Y, shopPoint.X] = new ShopTile(shopTexture, position);

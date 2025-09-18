@@ -13,6 +13,7 @@ namespace Object_Oriented_Map_System.Entities
         public HealthPotion(Texture2D texture, Point gridPosition)
             : base(texture, gridPosition)
         {
+            price = 5;
         }
 
         public override void OnPickup(GameManager gameManager)

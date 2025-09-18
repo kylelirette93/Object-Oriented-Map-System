@@ -12,9 +12,24 @@ namespace Object_Oriented_Map_System.Entities
         public List<Item> Items { get; private set; }
         private int maxSlots = 5;
 
+        // Kyle - Added currency property to track money with shop system.
+        public int Currency { get { return currency; }
+            set
+            {
+                if (value < 0)
+                {
+                    LogToFile("Attempted to set negative currency. Operation ignored.");
+                    return;
+                }
+                currency = value;
+            }
+        }
+        int currency = 0;
+
         public Inventory()
         {
             Items = new List<Item>(maxSlots);
+            EventBus.Instance.Subscribe(EventType.EarnCash, IncrementCurrency);
         }
 
         public bool AddItem(Item item)
@@ -26,6 +41,12 @@ namespace Object_Oriented_Map_System.Entities
 
             Items.Add(item);
             return true;
+        }
+
+        private void IncrementCurrency()
+        {
+            // Increment currency when enemy is killed.
+            currency += 10;
         }
 
         public void RemoveItem(Item item)
@@ -45,6 +66,11 @@ namespace Object_Oriented_Map_System.Entities
             {
                 LogToFile($"Item not found in inventory: {item.GetType().Name}");
             }
+        }
+
+        public Item GetItem(int index)
+        {
+            return Items[index];
         }
 
         public void UseItem(int index, GameManager gameManager)
@@ -77,6 +103,9 @@ namespace Object_Oriented_Map_System.Entities
 
                 // Draw a grey border
                 spriteBatch.Draw(whiteTexture, new Rectangle(slotRect.X - 2, slotRect.Y - 2, 36, 36), Color.DarkGray);
+
+                // Kyle - Added currency display below inventory slots.
+                spriteBatch.DrawString(font, "Money: " + Currency.ToString(), new Vector2(position.X, position.Y + 35), Color.Green);
 
                 // Draw a white rectangle for the slot background
                 spriteBatch.Draw(whiteTexture, slotRect, Color.LightGray);

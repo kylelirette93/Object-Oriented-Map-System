@@ -81,6 +81,9 @@ namespace Object_Oriented_Map_System.Managers
 
         // Kyle - Made the game manager accessible from anywhere.
         public static GameManager Instance;
+
+        public List<Shop> Shops = new List<Shop>();
+        Shop activeShop = null;
       
         public GameManager(GraphicsDeviceManager graphics, ContentManager content)
         {
@@ -269,7 +272,21 @@ namespace Object_Oriented_Map_System.Managers
             }
 
             KeyboardState currentKeyboardState = Keyboard.GetState();
-            HandleItemUsage(currentKeyboardState);
+            
+            // Check if a shop is active, if so update it for input.
+            if (activeShop != null)
+            {
+                activeShop.Update(gameTime);
+                if (activeShop.IsVisited == false)
+                {
+                    // Close the shop.
+                    activeShop = null; 
+                }
+            }
+            else
+            {
+                HandleItemUsage(currentKeyboardState);
+            }
 
             // Prioritize aiming modes
             if (gameState == GameState.FireballAiming)
@@ -338,6 +355,7 @@ namespace Object_Oriented_Map_System.Managers
 
             // Kyle - Set state in input manager.
             input.SetState(currentKeyboardState);
+
         }
 
         // Kyle -- Commented out because it wasn't ever called to begijn with.
@@ -499,7 +517,8 @@ namespace Object_Oriented_Map_System.Managers
                 if (shopAtTarget != null)
                 {
                     shopAtTarget.LoadContent(_content);
-                    shopAtTarget.Visit();
+                    shopAtTarget.Visit(player);
+                    activeShop = shopAtTarget;
                     LogToFile("Player entered a shop.");
                 }
 

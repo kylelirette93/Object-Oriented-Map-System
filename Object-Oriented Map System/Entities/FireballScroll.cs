@@ -15,6 +15,7 @@ namespace Object_Oriented_Map_System.Entities
         public FireballScroll(Texture2D texture, Point gridPosition)
             : base(texture, gridPosition)
         {
+            price = 7;
         }
 
         public override void OnPickup(GameManager gameManager)

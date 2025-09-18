@@ -81,6 +81,6 @@ namespace Object_Oriented_Map_System.Managers
 
     public enum EventType
     {
-
+        EarnCash
     }
 }

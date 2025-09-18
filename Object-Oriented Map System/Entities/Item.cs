@@ -10,7 +10,11 @@ namespace Object_Oriented_Map_System.Entities
     {
         public Texture2D Texture { get; protected set; }
         public Point GridPosition { get; protected set; }
-        public bool IsPickedUp { get; private set; } = false;
+        public bool IsPickedUp { get; set; } = false;
+
+        // Kyle - Added item price, to handle buying items with shop system.
+        public int Price { get { return price; } }
+        protected int price;
 
         protected Item(Texture2D texture, Point gridPosition)
         {
@@ -19,6 +23,11 @@ namespace Object_Oriented_Map_System.Entities
         }
 
         public virtual void OnPickup(GameManager gameManager)
+        {
+            IsPickedUp = true;
+        }
+
+        public virtual void OnPickup()
         {
             IsPickedUp = true;
         }
@@ -37,6 +46,8 @@ namespace Object_Oriented_Map_System.Entities
                 spriteBatch.Draw(Texture, worldPosition, Color.White);
             }
         }
+
+
 
 
 

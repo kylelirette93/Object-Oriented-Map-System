@@ -107,6 +107,9 @@ namespace Object_Oriented_Map_System.Entities
 
             LogToFile($"Enemy at {GridPosition} has died.");
 
+            // Reward player with currency on enemy death
+            EventBus.Instance.Publish(EventType.EarnCash);
+
             // Remove from the game logic immediately
             gameManager.Enemies.Remove(this);
 
