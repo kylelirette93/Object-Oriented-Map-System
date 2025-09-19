@@ -36,9 +36,10 @@ namespace Object_Oriented_Map_System.Entities
 
         public virtual void TakeTurn(Action onComplete)
         {
-            if (!TurnManager.Instance.IsEnemyTurn())
+            if (!TurnManager.Instance.IsEnemyTurn() && TurnManager.Instance.IsPlayerTurn())
             {
-               // LogToFile($"ERROR: Enemy at {GridPosition} tried to move outside EnemyTurn!");
+                // LogToFile($"ERROR: Enemy at {GridPosition} tried to move outside EnemyTurn!");
+                onComplete?.Invoke();
                 return;
             }
 
@@ -108,7 +109,7 @@ namespace Object_Oriented_Map_System.Entities
             Console.WriteLine("Enemy has died.");
 
             // Remove from the game logic immediately
-            gameManager.Enemies.Remove(this);
+            gameManager.MarkEnemyForRemoval(this);
 
             // Check if the exit should open after enemy removal
             gameManager.CheckExitTile();

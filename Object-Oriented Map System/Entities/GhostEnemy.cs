@@ -49,6 +49,7 @@ namespace Object_Oriented_Map_System.Entities
             {
                 GridPosition = targetPosition;
                 worldPosition = new Vector2(GridPosition.X * gameManager.gameMap.TileWidth, GridPosition.Y * gameManager.gameMap.TileHeight);
+                onComplete?.Invoke();
                 LogToFile($"Ghost moved to {GridPosition}");
             }
 

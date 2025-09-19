@@ -16,13 +16,12 @@ namespace Object_Oriented_Map_System.Entities
             price = 10;
         }
 
-        public override void OnPickup(GameManager gameManager)
+        public override void OnPickup()
         {
-            base.OnPickup(gameManager);
-            gameManager.player.PlayerInventory.AddItem(this);
+            base.OnPickup();
         }
 
-        public override void Use(GameManager gameManager)
+        public override void Use()
         {
             if (gameManager.player.PlayerHealth.IsAlive)
             {
@@ -42,6 +41,7 @@ namespace Object_Oriented_Map_System.Entities
                     // Remove if enemy dies
                     if (!enemy.IsAlive)
                     {
+                        EventBus.Instance.Publish(EventType.EarnCash, 10);
                         gameManager.MarkEnemyForRemoval(enemy);
                         LogToFile($"Enemy at {enemy.GridPosition} defeated by Lightning Scroll.");
                     }

@@ -16,24 +16,23 @@ namespace Object_Oriented_Map_System.Entities
             price = 5;
         }
 
-        public override void OnPickup(GameManager gameManager)
+        public override void OnPickup()
         {
-            base.OnPickup(gameManager);
-            gameManager.player.PlayerInventory.AddItem(this);
+            base.OnPickup();
         }
 
-        public override void Use(GameManager gameManager)
+        public override void Use()
         {
             // Heal the player and remove the item
-            if (gameManager.player.PlayerHealth.IsAlive)
+            if (GameManager.Instance.player.PlayerHealth.IsAlive)
             {
-                int healAmount = Math.Min(HealAmount, gameManager.player.PlayerHealth.MaxHealth - gameManager.player.PlayerHealth.CurrentHealth);
+                int healAmount = Math.Min(HealAmount, GameManager.Instance.player.PlayerHealth.MaxHealth - GameManager.Instance.player.PlayerHealth.CurrentHealth);
 
                 if (healAmount > 0)
                 {
-                    gameManager.player.PlayerHealth.Heal(healAmount);
+                    GameManager.Instance.player.PlayerHealth.Heal(healAmount);
                     LogToFile($"Player used HealthPotion and healed {healAmount} HP.");
-                    gameManager.player.PlayerInventory.RemoveItem(this);
+                    GameManager.Instance.player.PlayerInventory.RemoveItem(this);
                     TurnManager.Instance.EndPlayerTurn();
                 }
                 else

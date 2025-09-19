@@ -10,7 +10,7 @@ namespace Object_Oriented_Map_System.Entities
 {
     public class RangedEnemy : Enemy
     {
-        public int FireballDamage { get; private set; } = 2;
+        public int FireballDamage { get; private set; } = 1;
 
         public RangedEnemy(Texture2D texture, Point gridPosition, Map map, GameManager gameManager)
             : base(texture, gridPosition, map, gameManager)
@@ -37,6 +37,7 @@ namespace Object_Oriented_Map_System.Entities
             if (CanSeePlayer())
             {
                 ShootProjectile();
+                onComplete?.Invoke();
             }
             else
             {

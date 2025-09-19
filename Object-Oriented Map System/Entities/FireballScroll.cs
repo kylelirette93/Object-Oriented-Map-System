@@ -18,19 +18,18 @@ namespace Object_Oriented_Map_System.Entities
             price = 7;
         }
 
-        public override void OnPickup(GameManager gameManager)
+        public override void OnPickup()
         {
-            base.OnPickup(gameManager);
-            gameManager.player.PlayerInventory.AddItem(this);
+            base.OnPickup();
         }
 
-        public override void Use(GameManager gameManager)
+        public override void Use()
         {
-            if (gameManager.player.PlayerHealth.IsAlive)
+            if (GameManager.Instance.player.PlayerHealth.IsAlive)
             {
-                gameManager.LastAttackWasScroll = true; // Mark it as a scroll attack
+                GameManager.Instance.LastAttackWasScroll = true; // Mark it as a scroll attack
                 // Trigger the aiming mode for Fireball
-                gameManager.EnterFireballAimingMode(this);
+                GameManager.Instance.EnterFireballAimingMode(this);
                 LogToFile("Player used Fireball Scroll. Choose a direction to cast it.");
             }
         }
@@ -47,14 +46,14 @@ namespace Object_Oriented_Map_System.Entities
         public void CastFireball(GameManager gameManager, Point direction)
         {
             // Create a fireball object at the player's current position
-            Point startPosition = gameManager.player.PlayerGridPosition;
+            Point startPosition = GameManager.Instance.player.PlayerGridPosition;
 
             // Instantiate a Fireball and add it to the active list
-            Fireball fireball = new Fireball(gameManager.fireballTexture, startPosition, direction, Damage, gameManager);
-            gameManager.ActiveFireballs.Add(fireball);
+            Fireball fireball = new Fireball(GameManager.Instance.fireballTexture, startPosition, direction, Damage, gameManager);
+            GameManager.Instance.ActiveFireballs.Add(fireball);
 
             // Remove the scroll and end the player's turn
-            gameManager.player.PlayerInventory.RemoveItem(this);
+            GameManager.Instance.player.PlayerInventory.RemoveItem(this);
             TurnManager.Instance.EndPlayerTurn();
             LogToFile("Fireball launched!");
         }

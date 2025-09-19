@@ -21,7 +21,7 @@ namespace Object_Oriented_Map_System.Entities
         public Player(ContentManager contentManager)
         {
             playerTexture = contentManager.Load<Texture2D>("player");
-            PlayerInventory = new Inventory();
+            PlayerInventory = new Inventory(false);
 
             PlayerHealth = new HealthComponent(5); // Set player health to 5
         }

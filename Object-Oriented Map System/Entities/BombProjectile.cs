@@ -12,17 +12,17 @@ namespace Object_Oriented_Map_System.Entities
         private Texture2D texture;
         private Point position;
         private Point direction;
-        private GameManager gameManager;
         private int damage;
+        GameManager gameManager;
         public bool IsActive { get; private set; } = true;
 
-        public BombProjectile(Texture2D texture, Point startPosition, Point direction, int damage, GameManager manager)
+        public BombProjectile(Texture2D texture, Point startPosition, Point direction, int damage)
         {
             this.texture = texture;
             this.position = startPosition;
             this.direction = direction;
             this.damage = damage;
-            this.gameManager = manager;
+            gameManager = GameManager.Instance;
         }
 
         public void Update()

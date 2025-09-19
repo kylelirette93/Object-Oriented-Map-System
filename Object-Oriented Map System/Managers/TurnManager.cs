@@ -46,7 +46,6 @@ namespace Object_Oriented_Map_System.Managers
         public void EndPlayerTurn()
         {
             //LogToFile("Player turn ended. Switching to Enemy Turn.");
-            GameManager.Instance.LastAttackWasScroll = false; // Reset after the turn
             GameManager.Instance.SetPlayerCanMove(false);
             CurrentTurn = TurnState.EnemyTurn;
 

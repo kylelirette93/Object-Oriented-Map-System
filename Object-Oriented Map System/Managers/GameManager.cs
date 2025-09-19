@@ -92,8 +92,8 @@ namespace Object_Oriented_Map_System.Managers
             _graphics = graphics;
             _content = content;
             gameMap = new Map(requiredRows, requiredColumns);
-            input = new InputManager();
             player = new Player(content);
+            input = new InputManager(player);
             player.PlayerHealth.OnHealthChanged += () => LogToFile($"Player took damage. Health: {player.PlayerHealth.CurrentHealth}");
             player.PlayerHealth.OnDeath += HandlePlayerDeath;
         }
@@ -132,6 +132,8 @@ namespace Object_Oriented_Map_System.Managers
             }
             else
             {
+                Shops.Clear();
+                gameMap.PlacedShops.Clear();
                 gameMap.GenerateRandomMap();
             }
 
@@ -167,7 +169,6 @@ namespace Object_Oriented_Map_System.Managers
                 foreach (var enemy in enemiesToRemove)
                 {
                     // Reward player with currency on enemy death
-                    EventBus.Instance.Publish(EventType.EarnCash);
                     Enemies.Remove(enemy);
                     LogToFile($"Removed enemy at {enemy.GridPosition}.");
                 }
@@ -232,7 +233,7 @@ namespace Object_Oriented_Map_System.Managers
 
             if (direction != Point.Zero && activeBomb != null)
             {
-                activeBomb.ThrowBomb(this, direction);
+                activeBomb.ThrowBomb(direction);
                 ExitBombAimingMode();
                 TurnManager.Instance.EndPlayerTurn();
             }
@@ -483,6 +484,8 @@ namespace Object_Oriented_Map_System.Managers
             }
             else
             {
+                Shops.Clear();
+                gameMap.PlacedShops.Clear();
                 gameMap.GenerateRandomMap();
             }
 
@@ -495,9 +498,20 @@ namespace Object_Oriented_Map_System.Managers
 
         public void HandlePlayerTurn(KeyboardState currentKeyboardState)
         {
+
             if (!TurnManager.Instance.IsPlayerTurn()) return; // Prevents movement during enemy turns
 
             Point targetPosition = player.PlayerGridPosition;
+
+            if (activeShop != null)
+            {
+                if (!targetPosition.Equals(activeShop.GridPosition))
+                {
+                    LogToFile("Player left the shop.");
+                    activeShop.Leave();
+                    activeShop = null;
+                }
+            }
 
             // Kyle - Get the keyboard state from the input manager.
             input.GetState(out currentKeyboardState);
@@ -525,6 +539,7 @@ namespace Object_Oriented_Map_System.Managers
                     LogToFile("Player entered a shop.");
                 }
 
+
                 if (enemyAtTarget != null)
                 {
                     int damage = 1;
@@ -541,11 +556,11 @@ namespace Object_Oriented_Map_System.Managers
                     // If enemy died, remove it from list immediately
                     if (!enemyAtTarget.IsAlive)
                     {
+                        EventBus.Instance.Publish(EventType.EarnCash, 10);
                         Enemies.Remove(enemyAtTarget);
                         CheckExitTile(); // Ensure the exit updates
                     }
 
-                    TurnManager.Instance.EndPlayerTurn();
                 }
                 else if (IsCellAccessible(targetPosition.X, targetPosition.Y))
                 {
@@ -563,7 +578,7 @@ namespace Object_Oriented_Map_System.Managers
 
             if (itemAtTarget != null)
             {
-                itemAtTarget.OnPickup(this);
+                itemAtTarget.OnPickup();
                 LogToFile($"Player picked up item at {targetPosition}");
             }
         }
@@ -580,7 +595,7 @@ namespace Object_Oriented_Map_System.Managers
                     {
                         // Use the item if it's present in the inventory
                         LogToFile($"Using item at slot {i + 1}");
-                        player.PlayerInventory.UseItem(i, this);
+                        player.PlayerInventory.UseItem(i);
                     }
                     else
                     {

@@ -15,24 +15,21 @@ namespace Object_Oriented_Map_System.Entities
         // Kyle - Added item price, to handle buying items with shop system.
         public int Price { get { return price; } }
         protected int price;
+        protected GameManager gameManager;
 
         protected Item(Texture2D texture, Point gridPosition)
         {
             Texture = texture;
             GridPosition = gridPosition;
+            gameManager = GameManager.Instance;
         }
-
-        public virtual void OnPickup(GameManager gameManager)
-        {
-            IsPickedUp = true;
-        }
-
         public virtual void OnPickup()
         {
             IsPickedUp = true;
+            EventBus.Instance.Publish(EventType.PickupItem, this);
         }
 
-        public virtual void Use(GameManager gameManager)
+        public virtual void Use()
         {
             // Default behavior for items with no special effect
             

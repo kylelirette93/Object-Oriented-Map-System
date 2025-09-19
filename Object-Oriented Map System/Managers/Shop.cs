@@ -25,7 +25,7 @@ namespace Object_Oriented_Map_System.Managers
         Texture2D healthPotionTexture;
         Texture2D fireballTexture;
 
-        Inventory shopInventory = new Inventory();
+        Inventory shopInventory = new Inventory(true);
         string shopText;
         SpriteFont shopFont;
         Player player;
@@ -52,6 +52,11 @@ namespace Object_Oriented_Map_System.Managers
             // Pass reference to player to adjust inventory.
             this.player = player;
             isVisited = true;
+        }
+
+        public void Leave()
+        {
+            isVisited = false;
         }
 
         public void Update(GameTime gameTime)
@@ -105,7 +110,7 @@ namespace Object_Oriented_Map_System.Managers
                 if (item != null)
                 {
                     item.IsPickedUp = true;
-                    shopInventory.AddItem(item);
+                    shopInventory.AddShopItems(purchasableItems);
                 }
             }
         }

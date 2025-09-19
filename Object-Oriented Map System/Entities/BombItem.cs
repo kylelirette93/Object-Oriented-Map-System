@@ -16,31 +16,30 @@ namespace Object_Oriented_Map_System.Entities
             price = 7;
         }
 
-        public override void OnPickup(GameManager gameManager)
+        public override void OnPickup()
         {
-            base.OnPickup(gameManager);
-            gameManager.player.PlayerInventory.AddItem(this);
+            base.OnPickup();
         }
 
-        public override void Use(GameManager gameManager)
+        public override void Use()
         {
-            if (gameManager.player.PlayerHealth.IsAlive)
+            if (GameManager.Instance.player.PlayerHealth.IsAlive)
             {
-                gameManager.EnterBombAimingMode(this);
+                GameManager.Instance.EnterBombAimingMode(this);
                 LogToFile("Player used Bomb. Choose a direction to throw it.");
             }
         }
 
-        public void ThrowBomb(GameManager gameManager, Point direction)
+        public void ThrowBomb(Point direction)
         {
-            Point startPosition = gameManager.player.PlayerGridPosition;
+            Point startPosition = GameManager.Instance.player.PlayerGridPosition;
 
             // Create a BombProjectile and add it to the active list
-            BombProjectile bombProjectile = new BombProjectile(gameManager.bombTexture, startPosition, direction, Damage, gameManager);
-            gameManager.ActiveBombs.Add(bombProjectile);
+            BombProjectile bombProjectile = new BombProjectile(GameManager.Instance.bombTexture, startPosition, direction, Damage);
+            GameManager.Instance.ActiveBombs.Add(bombProjectile);
 
             // Remove the bomb from inventory and end the player's turn
-            gameManager.player.PlayerInventory.RemoveItem(this);
+            GameManager.Instance.player.PlayerInventory.RemoveItem(this);
             TurnManager.Instance.EndPlayerTurn();
             LogToFile("Bomb thrown!");
         }

@@ -11,6 +11,7 @@ namespace Object_Oriented_Map_System.Entities
     {
         public List<Item> Items { get; private set; }
         private int maxSlots = 5;
+        bool isShop = false;
 
         // Kyle - Added currency property to track money with shop system.
         public int Currency
@@ -28,27 +29,42 @@ namespace Object_Oriented_Map_System.Entities
         }
         int currency;
 
-        public Inventory()
+        public Inventory(bool isShop)
         {
+            this.isShop = isShop;
             Items = new List<Item>(maxSlots);
-            EventBus.Instance.Subscribe(EventType.EarnCash, IncrementCurrency);
+            EventBus.Instance.Subscribe<int>(EventType.EarnCash, IncrementCurrency);
+            EventBus.Instance.Subscribe<Item>(EventType.PickupItem, AddItem);
         }
 
-        public bool AddItem(Item item)
+        public void AddItem(Item item)
         {
-            if (Items.Count >= maxSlots)
+            if (!isShop)
             {
-                return false; // Inventory is full
+                Add(item);
             }
-
-            Items.Add(item);
-            return true;
         }
 
-        private void IncrementCurrency()
+        public void AddShopItems(List<Item> items)
+        {
+            foreach (var item in items)
+            {
+                Add(item);
+            }
+        }
+
+        private void Add(Item item)
+        {
+            if (Items.Count < maxSlots)
+            {
+                Items.Add(item);
+            }
+        }
+
+        private void IncrementCurrency(int moneyToAdd)
         {
             // Increment currency when enemy is killed.
-            currency += 10;
+            currency += moneyToAdd;
         }
 
         public void RemoveItem(Item item)
@@ -75,7 +91,7 @@ namespace Object_Oriented_Map_System.Entities
             return Items[index];
         }
 
-        public void UseItem(int index, GameManager gameManager)
+        public void UseItem(int index)
         {
             // Validate index to prevent out of range error
             if (Items == null || Items.Count == 0)
@@ -92,7 +108,7 @@ namespace Object_Oriented_Map_System.Entities
 
             Item item = Items[index];
             LogToFile($"Using item: {item.GetType().Name} at index {index}");
-            item.Use(gameManager);            
+            item.Use();            
         }
 
 

@@ -27,20 +27,20 @@ namespace Object_Oriented_Map_System.Managers
                 return instance;
             }
         }
-        Dictionary<EventType, List<Action>> eventListeners = new Dictionary<EventType, List<Action>>();
+        Dictionary<EventType, List<Delegate>> eventListeners = new Dictionary<EventType, List<Delegate>>();
 
         /// <summary>
         /// Subscribes to an event, and creates a list of listeners associated with it.
         /// </summary>
         /// <param name="eventType">The event type to add a listener to.</param>
         /// <param name="listener">The action associated with an event.</param>
-        public void Subscribe(EventType eventType, Action listener)
+        public void Subscribe<T>(EventType eventType, Action<T> listener)
         {
             // Check if the listener doesn't already contain the event type.
             if (!eventListeners.ContainsKey(eventType))
             {
                 // Create a new list of actions for that specific event.
-                eventListeners[eventType] = new List<Action>();
+                eventListeners[eventType] = new List<Delegate>();
             }
             eventListeners[eventType].Add(listener);
         }
@@ -67,13 +67,13 @@ namespace Object_Oriented_Map_System.Managers
         /// methods associated with the event type and invokes them.
         /// </summary>
         /// <param name="eventType"></param>
-        public void Publish(EventType eventType)
+        public void Publish<T>(EventType eventType, T arg)
         {
-            if (eventListeners.ContainsKey(eventType))
+            if (eventListeners.TryGetValue(eventType, out var listeners))
             {
-                foreach (var listener in eventListeners[eventType])
+                foreach (var listener in listeners.Cast<Action<T>>())
                 {
-                    listener.Invoke();
+                    listener(arg);
                 }
             }
         }
@@ -81,6 +81,7 @@ namespace Object_Oriented_Map_System.Managers
 
     public enum EventType
     {
-        EarnCash
+        EarnCash,
+        PickupItem
     }
 }
