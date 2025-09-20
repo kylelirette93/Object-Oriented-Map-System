@@ -42,7 +42,7 @@ namespace Object_Oriented_Map_System
 
         protected override void Initialize()
         {
-            gameManager = new GameManager(_graphics, Content);
+            gameManager = new GameManager(_graphics, Content, this);
             gameManager.player.OnPlayerDeath = () => currentGameState = MainGameState.GameOver;
             base.Initialize();
         }
@@ -77,7 +77,7 @@ namespace Object_Oriented_Map_System
                     if (startButton.Contains(mousePos))
                     {
                         currentGameState = MainGameState.Playing;
-                        gameManager = new GameManager(_graphics, Content);
+                        gameManager = new GameManager(_graphics, Content, this);
                         gameManager.player.OnPlayerDeath = () =>
                         {
                             currentGameState = MainGameState.GameOver;
@@ -165,7 +165,7 @@ namespace Object_Oriented_Map_System
         private void RestartGame()
         {
             currentGameState = MainGameState.Playing;
-            gameManager = new GameManager(_graphics, Content);
+            gameManager = new GameManager(_graphics, Content, this);
             gameManager.player.OnPlayerDeath = () =>
             {
                 currentGameState = MainGameState.GameOver;

@@ -12,6 +12,7 @@ using Object_Oriented_Map_System.Entities;
 using Microsoft.Xna.Framework.Audio;
 using System.ComponentModel.Design;
 using System.Runtime.CompilerServices;
+using Object_Oriented_Map_System.QuestSystem;
 
 
 namespace Object_Oriented_Map_System.Managers
@@ -74,6 +75,7 @@ namespace Object_Oriented_Map_System.Managers
         public List<ExplosionEffect> ActiveExplosions { get; private set; } = new List<ExplosionEffect>();
 
         InputManager input;
+        QuestManager questManager;
 
         public bool LastAttackWasScroll {  get; set; }
 
@@ -86,7 +88,7 @@ namespace Object_Oriented_Map_System.Managers
         Shop activeShop = null;
         EventBus events = new EventBus();
       
-        public GameManager(GraphicsDeviceManager graphics, ContentManager content)
+        public GameManager(GraphicsDeviceManager graphics, ContentManager content, Game1 game)
         {
             Instance = this;
             _graphics = graphics;
@@ -94,6 +96,7 @@ namespace Object_Oriented_Map_System.Managers
             gameMap = new Map(requiredRows, requiredColumns);
             player = new Player(content);
             input = new InputManager(player);
+            questManager = new QuestManager();
             player.PlayerHealth.OnHealthChanged += () => LogToFile($"Player took damage. Health: {player.PlayerHealth.CurrentHealth}");
             player.PlayerHealth.OnDeath += HandlePlayerDeath;
         }
@@ -342,6 +345,7 @@ namespace Object_Oriented_Map_System.Managers
 
 
             CheckExitTile();
+            
 
             if (isFadingOut)
             {
@@ -359,6 +363,9 @@ namespace Object_Oriented_Map_System.Managers
 
             // Kyle - Set state in input manager.
             input.SetState(currentKeyboardState);
+
+            // Kyle - Added tracking for quest in update, so multiple events don't get fired.
+            questManager.Update();
 
         }
 
@@ -476,6 +483,7 @@ namespace Object_Oriented_Map_System.Managers
         private void LoadNextMap()
         {
             CurrentStage++;
+            EventBus.Instance.Publish(EventType.WaveCompleted, CurrentStage);
 
             if (currentPremadeMapIndex < premadeMapFiles.Count)
             {
@@ -556,7 +564,6 @@ namespace Object_Oriented_Map_System.Managers
                     // If enemy died, remove it from list immediately
                     if (!enemyAtTarget.IsAlive)
                     {
-                        EventBus.Instance.Publish(EventType.EarnCash, 10);
                         Enemies.Remove(enemyAtTarget);
                         CheckExitTile(); // Ensure the exit updates
                     }

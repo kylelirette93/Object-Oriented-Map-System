@@ -39,16 +39,15 @@ namespace Object_Oriented_Map_System.Entities
                     gameManager.AddDamageText($"-{Damage}", damageTextPosition);
 
                     // Remove if enemy dies
-                    if (!enemy.IsAlive)
+                    /*if (!enemy.IsAlive)
                     {
-                        EventBus.Instance.Publish(EventType.EarnCash, 10);
                         gameManager.MarkEnemyForRemoval(enemy);
                         LogToFile($"Enemy at {enemy.GridPosition} defeated by Lightning Scroll.");
                     }
                     else
                     {
                         LogToFile($"Enemy at {enemy.GridPosition} took {Damage} damage from Lightning Scroll.");
-                    }
+                    }*/
                 }
 
                 // Remove scroll from inventory and end the turn

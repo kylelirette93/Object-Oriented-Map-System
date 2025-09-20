@@ -1,0 +1,18 @@
+{
+    "quests": [
+        {
+            "id": "kill_enemies",
+            "description": "Kill 5 Enemies",
+            "targetCount": 10
+        },
+        {
+            "id": "beat_waves",
+            "description": "Beat 5 waves",
+            "targetCount": 5
+        },
+        {
+            "id": "win_game",
+            "description": "Win the game"
+        }
+    ]
+}

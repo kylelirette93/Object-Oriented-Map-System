@@ -27,7 +27,10 @@ namespace Object_Oriented_Map_System.Managers
                 return instance;
             }
         }
-        Dictionary<EventType, List<Delegate>> eventListeners = new Dictionary<EventType, List<Delegate>>();
+        Dictionary<EventType, List<Delegate>> argumentListeners = new Dictionary<EventType, List<Delegate>>();
+        Dictionary<EventType, List<Action>> eventListeners = new Dictionary<EventType, List<Action>>();
+
+        Dictionary<EventType, bool> eventInProgress = new();
 
         /// <summary>
         /// Subscribes to an event, and creates a list of listeners associated with it.
@@ -37,29 +40,21 @@ namespace Object_Oriented_Map_System.Managers
         public void Subscribe<T>(EventType eventType, Action<T> listener)
         {
             // Check if the listener doesn't already contain the event type.
-            if (!eventListeners.ContainsKey(eventType))
+            if (!argumentListeners.ContainsKey(eventType))
             {
                 // Create a new list of actions for that specific event.
-                eventListeners[eventType] = new List<Delegate>();
+                argumentListeners[eventType] = new List<Delegate>();
             }
-            eventListeners[eventType].Add(listener);
+            argumentListeners[eventType].Add(listener);
         }
 
-        /// <summary>
-        /// Removes each listener from a specific event.
-        /// </summary>
-        /// <param name="eventType">The event to remove listeners from.</param>
-        public void Unsubscribe(EventType eventType)
+        public void Subscribe(EventType eventType, Action listener)
         {
-            // Check the dictionary for which event to unsubscribe from.
-            if (eventListeners.ContainsKey(eventType))
+            if (!eventListeners.ContainsKey(eventType))
             {
-                foreach (Action listener in eventListeners[eventType])
-                {
-                    // Remove all listeners from that specific event.
-                    eventListeners[eventType].Remove(listener);
-                }
+                eventListeners[eventType] = new List<Action>();
             }
+            eventListeners[eventType].Add(listener);
         }
 
         /// <summary>
@@ -69,7 +64,7 @@ namespace Object_Oriented_Map_System.Managers
         /// <param name="eventType"></param>
         public void Publish<T>(EventType eventType, T arg)
         {
-            if (eventListeners.TryGetValue(eventType, out var listeners))
+            if (argumentListeners.TryGetValue(eventType, out var listeners))
             {
                 foreach (var listener in listeners.Cast<Action<T>>())
                 {
@@ -77,11 +72,24 @@ namespace Object_Oriented_Map_System.Managers
                 }
             }
         }
+
+        public void Publish(EventType eventType)
+        {
+            if (eventListeners.ContainsKey(eventType))
+            {
+                foreach (var listener in eventListeners[eventType])
+                {
+                    listener.Invoke();
+                }
+            }
+        }
 }
 
     public enum EventType
     {
-        EarnCash,
-        PickupItem
+        KillEnemy,
+        PickupItem,
+        WaveCompleted,
+        QuestCompleted
     }
 }

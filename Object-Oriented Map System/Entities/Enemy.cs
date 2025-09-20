@@ -104,10 +104,9 @@ namespace Object_Oriented_Map_System.Entities
 
         public virtual void Die()
         {
-            if (!IsAlive) return;
-
             Console.WriteLine("Enemy has died.");
 
+            EventBus.Instance.Publish(EventType.KillEnemy, 1);
             // Remove from the game logic immediately
             gameManager.MarkEnemyForRemoval(this);
 

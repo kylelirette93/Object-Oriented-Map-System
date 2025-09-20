@@ -33,7 +33,7 @@ namespace Object_Oriented_Map_System.Entities
         {
             this.isShop = isShop;
             Items = new List<Item>(maxSlots);
-            EventBus.Instance.Subscribe<int>(EventType.EarnCash, IncrementCurrency);
+            EventBus.Instance.Subscribe<int>(EventType.KillEnemy, IncrementCurrency);
             EventBus.Instance.Subscribe<Item>(EventType.PickupItem, AddItem);
         }
 
