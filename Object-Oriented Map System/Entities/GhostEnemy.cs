@@ -102,7 +102,6 @@ namespace Object_Oriented_Map_System.Entities
 
             if (!IsAlive)
             {
-                gameManager.MarkEnemyForRemoval(this);
                 LogToFile($"Ghost at {GridPosition} defeated by Scroll!");
             }
         }

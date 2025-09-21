@@ -328,7 +328,7 @@ namespace Object_Oriented_Map_System.Managers
             }
 
             // Ensure exit only works when all enemies are defeated
-            if (gameMap.Tiles[player.PlayerGridPosition.Y, player.PlayerGridPosition.X] is ExitTile && Enemies.Count == 0)
+            if (gameMap.Tiles[player.PlayerGridPosition.Y, player.PlayerGridPosition.X] is ExitTile)
             {
                 LoadNextMap();
             }
@@ -649,7 +649,8 @@ namespace Object_Oriented_Map_System.Managers
 
         public void CheckExitTile()
         {
-            if (Enemies.Count == 0)
+            // Kyle - Check if list contains ghost enemy. If so, you can exit.
+            if (Enemies.Count == 0 || Enemies.All(e => e is GhostEnemy))
             {
                 ReplaceExitTile();
             }
