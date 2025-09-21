@@ -14,6 +14,7 @@ namespace Object_Oriented_Map_System.Entities
             : base(texture, gridPosition)
         {
             price = 5;
+            name = "Health Potion";
         }
 
         public override void OnPickup()

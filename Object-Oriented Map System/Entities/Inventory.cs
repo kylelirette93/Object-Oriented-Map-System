@@ -131,7 +131,7 @@ namespace Object_Oriented_Map_System.Entities
                     spriteBatch.Draw(Items[i].Texture, slotRect, Color.White);
                 }
                 // Kyle - Added currency display below inventory slots.
-                string currencyText = "Money: " + currency.ToString();
+                string currencyText = "Money: $" + currency.ToString();
                 spriteBatch.DrawString(font, currencyText, new Vector2(position.X, position.Y + 35), Color.Green);
             }
         }

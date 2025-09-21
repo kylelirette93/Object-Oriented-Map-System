@@ -1,14 +1,21 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Xna.Framework.Graphics;
 namespace Object_Oriented_Map_System.QuestSystem
 
 {
-    internal class QuestManager
+    /// <summary>
+    /// Quest Manager loads quests and update their statees.
+    /// </summary>
+    public class QuestManager
 {
-        QuestTracker questTracker = new QuestTracker();
+        QuestTracker questTracker;
+        QuestUI questUI;
 
-        public QuestManager()
+        public QuestManager(SpriteFont font)
         {
+            questTracker = new QuestTracker();
             LoadQuests();
+            // Pass loaded quests to be tracked.
+            questUI = new QuestUI(questTracker.ActiveQuests, font);
         }
 
         public void LoadQuests()
@@ -31,10 +38,10 @@ namespace Object_Oriented_Map_System.QuestSystem
             });
             questTracker.ActiveQuests.Add(new Quest
             {
-                Name = "Win the Game",
-                Type = QuestType.QuestCompleted,
-                Description = "Win the game",
-                TargetCount = 2,
+                Name = "Buy 3 Items",
+                Type = QuestType.Buy3Items,
+                Description = "Buy 3 Items",
+                TargetCount = 3,
                 IsCompleted = false
             });
         }
@@ -42,6 +49,11 @@ namespace Object_Oriented_Map_System.QuestSystem
         public void Update()
         {
             questTracker.CheckProgression();
+        }
+
+        public void Draw(SpriteBatch spriteBatch)
+        {
+            questUI.Draw(spriteBatch);
         }
     }
 }

@@ -3,8 +3,6 @@ using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Object_Oriented_Map_System.Managers;
-using Object_Oriented_Map_System.MapSystem;
-using Object_Oriented_Map_System.MapSystem.Tiles;
 
 namespace Object_Oriented_Map_System.Entities
 {
@@ -16,6 +14,7 @@ namespace Object_Oriented_Map_System.Entities
             : base(texture, gridPosition)
         {
             price = 7;
+            name = "Fireball Scroll";
         }
 
         public override void OnPickup()

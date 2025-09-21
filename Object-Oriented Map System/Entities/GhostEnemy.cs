@@ -10,6 +10,7 @@ namespace Object_Oriented_Map_System.Entities
 {
     public class GhostEnemy : Enemy
     {
+        InputManager input = InputManager.Instance;
         public GhostEnemy(Texture2D texture, Point gridPosition, Map map, GameManager gameManager)
             : base(texture, gridPosition, map, gameManager)
         {
@@ -30,6 +31,7 @@ namespace Object_Oriented_Map_System.Entities
                 onComplete?.Invoke();
                 return;
             }
+ 
 
             // Find path to player using ghost's phasing ability
             Point targetPosition = FindPathToTarget(gameManager.player.PlayerGridPosition, ignoreWalls: true);
@@ -44,17 +46,19 @@ namespace Object_Oriented_Map_System.Entities
                     gameManager.player.PlayerGridPosition.Y * gameManager.gameMap.TileHeight
                 );
                 gameManager.AddDamageText($"-{damage}", damagePosition);
+
+                input.ScheduleDelayedAction(0.3f, onComplete);
             }
             else
             {
                 GridPosition = targetPosition;
                 worldPosition = new Vector2(GridPosition.X * gameManager.gameMap.TileWidth, GridPosition.Y * gameManager.gameMap.TileHeight);
-                onComplete?.Invoke();
                 LogToFile($"Ghost moved to {GridPosition}");
             }
 
-            gameManager.ScheduleDelayedAction(0.3f, onComplete);
+            input.ScheduleDelayedAction(0.3f, onComplete);
         }
+
 
         protected Point FindPathToTarget(Point target, bool ignoreWalls)
         {
@@ -70,6 +74,7 @@ namespace Object_Oriented_Map_System.Entities
             Point secondaryMove = prioritizeHorizontal
                 ? new Point(GridPosition.X, GridPosition.Y + Math.Sign(dy))
                 : new Point(GridPosition.X + Math.Sign(dx), GridPosition.Y);
+
 
             // Ghosts ignore walls, so the move is valid without checking accessibility
             return primaryMove;

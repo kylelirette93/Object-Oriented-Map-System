@@ -1,12 +1,11 @@
 ﻿using Object_Oriented_Map_System.Managers;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Object_Oriented_Map_System.QuestSystem
 {
+    /// <summary>
+    /// Quest class holds simple data for a specific quest.
+    /// </summary>
     public class Quest
 {
         public string Name { get; set; }
@@ -20,16 +19,26 @@ namespace Object_Oriented_Map_System.QuestSystem
         public bool IsActive { get { return isActive; } set { isActive = value; } }
         bool isActive = true;
 
+        /// <summary>
+        /// Checks progress of a quest, used for determining if quest is complete.
+        /// </summary>
+        /// <param name="progress"></param>
+        /// <returns></returns>
         public bool CheckProgress(int progress)
         {
             return progress >= targetCount;
         }
 
+        /// <summary>
+        /// Completes a quest, changing its state.
+        /// </summary>
         public void Complete()
         {
             IsCompleted = true;
             IsActive = false;
             Console.WriteLine("Quest completed: " + Name);
+            // Publish event to notify quest tracker that its completed.
+            EventBus.Instance.Publish<Quest>(EventType.AddCompletedQuest, this);
         }
 }
 }

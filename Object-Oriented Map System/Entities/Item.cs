@@ -15,6 +15,9 @@ namespace Object_Oriented_Map_System.Entities
         // Kyle - Added item price, to handle buying items with shop system.
         public int Price { get { return price; } }
         protected int price;
+
+        public string Name { get { return name; } }
+        protected string name;
         protected GameManager gameManager;
 
         protected Item(Texture2D texture, Point gridPosition)
@@ -41,19 +44,6 @@ namespace Object_Oriented_Map_System.Entities
             {
                 Vector2 worldPosition = new Vector2(GridPosition.X * tileWidth, GridPosition.Y * tileHeight);
                 spriteBatch.Draw(Texture, worldPosition, Color.White);
-            }
-        }
-
-
-
-
-
-        private void LogToFile(string message)
-        {
-            string logPath = "debug_log.txt";
-            using (StreamWriter writer = new StreamWriter(logPath, true))
-            {
-                writer.WriteLine($"{DateTime.Now}: {message}");
             }
         }
     }

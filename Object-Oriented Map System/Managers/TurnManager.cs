@@ -79,6 +79,8 @@ namespace Object_Oriented_Map_System.Managers
             ProcessNextEnemy(0); // Begin enemy turns sequentially
         }
 
+
+
         private void ProcessNextEnemy(int index)
         {
             if (index >= GameManager.Instance.Enemies.Count)
@@ -113,14 +115,14 @@ namespace Object_Oriented_Map_System.Managers
                 if (!enemy.IsAlive)
                 {
                     //LogToFile($"Skipping dead enemy at {enemy.GridPosition}.");
-                    GameManager.Instance.ScheduleDelayedAction(0.5f, () => ProcessNextEnemy(index + 1));
+                    InputManager.Instance.ScheduleDelayedAction(0.5f, () => ProcessNextEnemy(index + 1));
                     return;
                 }
 
                 enemy.TakeTurn(() =>
                 {
                     //LogToFile($"Enemy at {enemy.GridPosition} finished move. Processing next enemy...");
-                    GameManager.Instance.ScheduleDelayedAction(0.5f, () => ProcessNextEnemy(index + 1));
+                    InputManager.Instance.ScheduleDelayedAction(0.5f, () => ProcessNextEnemy(index + 1));
                 });
             }
             else
@@ -128,6 +130,7 @@ namespace Object_Oriented_Map_System.Managers
                 LogToFile($"ERROR: Tried to process enemy {index} outside EnemyTurn!");
             }
         }
+
 
         private void EndEnemyTurn()
         {

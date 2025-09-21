@@ -74,7 +74,6 @@ namespace Object_Oriented_Map_System.Managers
 
         public List<ExplosionEffect> ActiveExplosions { get; private set; } = new List<ExplosionEffect>();
 
-        InputManager input;
         QuestManager questManager;
 
         public bool LastAttackWasScroll {  get; set; }
@@ -95,8 +94,7 @@ namespace Object_Oriented_Map_System.Managers
             _content = content;
             gameMap = new Map(requiredRows, requiredColumns);
             player = new Player(content);
-            input = new InputManager(player);
-            questManager = new QuestManager();
+            InputManager.Instance.SetPlayer(player);
             player.PlayerHealth.OnHealthChanged += () => LogToFile($"Player took damage. Health: {player.PlayerHealth.CurrentHealth}");
             player.PlayerHealth.OnDeath += HandlePlayerDeath;
         }
@@ -114,6 +112,7 @@ namespace Object_Oriented_Map_System.Managers
             fireballTexture = _content.Load<Texture2D>("FireballScroll");
             lightningScrollTexture = _content.Load<Texture2D>("LightningScroll");
             bombTexture = _content.Load<Texture2D>("Bomb");
+            questManager = new QuestManager(damageFont);
 
             gameMap.LoadContent(_content);
 
@@ -150,11 +149,6 @@ namespace Object_Oriented_Map_System.Managers
             }
 
             TurnManager.Instance.StartPlayerTurn();
-        }
-
-        public void ScheduleDelayedAction(float delay, Action action)
-        {
-            input.delayedActions.Add((delay, action));
         }
 
         public void QueueEnemyForRemoval(Enemy enemy)
@@ -253,19 +247,19 @@ namespace Object_Oriented_Map_System.Managers
             RemoveQueuedEnemies();
 
             // Process scheduled actions with delays
-            for (int i = input.delayedActions.Count - 1; i >= 0; i--)
+            for (int i = InputManager.Instance.delayedActions.Count - 1; i >= 0; i--)
             {
-                var (timeRemaining, callback) = input.delayedActions[i];
+                var (timeRemaining, callback) = InputManager.Instance.delayedActions[i];
                 timeRemaining -= (float)gameTime.ElapsedGameTime.TotalSeconds;
 
                 if (timeRemaining <= 0)
                 {
                     callback.Invoke();
-                    input.delayedActions.RemoveAt(i);
+                    InputManager.Instance.delayedActions.RemoveAt(i);
                 }
                 else
                 {
-                    input.delayedActions[i] = (timeRemaining, callback); // Update remaining time
+                    InputManager.Instance.delayedActions[i] = (timeRemaining, callback); // Update remaining time
                 }
             }
 
@@ -362,7 +356,7 @@ namespace Object_Oriented_Map_System.Managers
             }
 
             // Kyle - Set state in input manager.
-            input.SetState(currentKeyboardState);
+            InputManager.Instance.SetState(currentKeyboardState);
 
             // Kyle - Added tracking for quest in update, so multiple events don't get fired.
             questManager.Update();
@@ -462,6 +456,7 @@ namespace Object_Oriented_Map_System.Managers
                 shop.Draw(spriteBatch);
             }
             spriteBatch.DrawString(damageFont, stageText, stagePosition, Color.Black);
+            questManager.Draw(spriteBatch);
 
             spriteBatch.End();
         }
@@ -506,7 +501,6 @@ namespace Object_Oriented_Map_System.Managers
 
         public void HandlePlayerTurn(KeyboardState currentKeyboardState)
         {
-
             if (!TurnManager.Instance.IsPlayerTurn()) return; // Prevents movement during enemy turns
 
             Point targetPosition = player.PlayerGridPosition;
@@ -522,15 +516,15 @@ namespace Object_Oriented_Map_System.Managers
             }
 
             // Kyle - Get the keyboard state from the input manager.
-            input.GetState(out currentKeyboardState);
+            InputManager.Instance.GetState(out currentKeyboardState);
 
-            if (currentKeyboardState.IsKeyDown(Keys.Up) && !input.PreviousKeyboardState.IsKeyDown(Keys.Up))
+            if (currentKeyboardState.IsKeyDown(Keys.Up) && !InputManager.Instance.PreviousKeyboardState.IsKeyDown(Keys.Up))
                 targetPosition.Y -= 1;
-            if (currentKeyboardState.IsKeyDown(Keys.Down) && !input.PreviousKeyboardState.IsKeyDown(Keys.Down))
+            if (currentKeyboardState.IsKeyDown(Keys.Down) && !InputManager.Instance.PreviousKeyboardState.IsKeyDown(Keys.Down))
                 targetPosition.Y += 1;
-            if (currentKeyboardState.IsKeyDown(Keys.Left) && !input.PreviousKeyboardState.IsKeyDown(Keys.Left))
+            if (currentKeyboardState.IsKeyDown(Keys.Left) && !InputManager.Instance.PreviousKeyboardState.IsKeyDown(Keys.Left))
                 targetPosition.X -= 1;
-            if (currentKeyboardState.IsKeyDown(Keys.Right) && !input.PreviousKeyboardState.IsKeyDown(Keys.Right))
+            if (currentKeyboardState.IsKeyDown(Keys.Right) && !InputManager.Instance.PreviousKeyboardState.IsKeyDown(Keys.Right))
                 targetPosition.X += 1;
 
             if (targetPosition != player.PlayerGridPosition)
@@ -595,7 +589,7 @@ namespace Object_Oriented_Map_System.Managers
             for (int i = 0; i < 5; i++)
             {
                 Keys key = Keys.D1 + i; // Keys 1-5
-                if (currentKeyboardState.IsKeyDown(key) && !input.PreviousKeyboardState.IsKeyDown(key))
+                if (currentKeyboardState.IsKeyDown(key) && !InputManager.Instance.PreviousKeyboardState.IsKeyDown(key))
                 {
                     // Ensure the index is within the inventory size
                     if (player.PlayerInventory.Items.Count > i)

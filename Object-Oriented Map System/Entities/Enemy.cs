@@ -20,6 +20,7 @@ namespace Object_Oriented_Map_System.Entities
         public bool IsAlive => Health.IsAlive; // Check if enemy is alive
         public bool IsStunned { get; protected set; } = false; // Enemy Stun Mechanic
         protected bool isFlipped = false;
+        InputManager input;
 
         public Enemy(Texture2D enemyTexture, Point startGridPos, Map map, GameManager manager)
         {
@@ -32,6 +33,7 @@ namespace Object_Oriented_Map_System.Entities
             Health = new HealthComponent(2); // Enemy starts with 2 health
             Health.OnHealthChanged += () => LogToFile($"Enemy at {GridPosition} took damage. Health: {Health.CurrentHealth}");
             Health.OnDeath += Die;
+            input = InputManager.Instance;
         }
 
         public virtual void TakeTurn(Action onComplete)
@@ -74,7 +76,7 @@ namespace Object_Oriented_Map_System.Entities
                 );
                 gameManager.AddDamageText($"-{damage}", damagePosition);
 
-                gameManager.ScheduleDelayedAction(0.3f, onComplete);
+                input.ScheduleDelayedAction(0.3f, onComplete);
                 return;
             }
 
@@ -84,7 +86,7 @@ namespace Object_Oriented_Map_System.Entities
                 worldPosition = new Vector2(GridPosition.X * gameMap.TileWidth, GridPosition.Y * gameMap.TileHeight);
             }
 
-            gameManager.ScheduleDelayedAction(0.3f, onComplete);
+            input.ScheduleDelayedAction(0.3f, onComplete);
         }
 
         public virtual void TakeDamage(int damage)
