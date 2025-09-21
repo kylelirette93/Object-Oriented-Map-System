@@ -30,9 +30,9 @@ namespace Object_Oriented_Map_System.QuestSystem
             });
             questTracker.ActiveQuests.Add(new Quest
             {
-                Name = "Beat 5 Waves",
-                Type = QuestType.Beat5Waves,
-                Description = "Beat 5 Waves",
+                Name = "Reach Wave 5",
+                Type = QuestType.ReachWave5,
+                Description = "Reach Wave 5",
                 TargetCount = 5,
                 IsCompleted = false
             });

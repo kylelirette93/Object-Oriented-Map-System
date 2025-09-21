@@ -45,7 +45,7 @@ namespace Object_Oriented_Map_System.QuestSystem
                 int stat = quest.Type switch
                 {
                     QuestType.KillEnemies => enemiesKilled,
-                    QuestType.Beat5Waves => wavesCompleted,
+                    QuestType.ReachWave5 => wavesCompleted,
                     QuestType.Buy3Items => itemsBought,
                     _ => 0
                 };
@@ -79,6 +79,6 @@ namespace Object_Oriented_Map_System.QuestSystem
 public enum QuestType
 {
     KillEnemies,
-    Beat5Waves,
+    ReachWave5,
     Buy3Items
 }

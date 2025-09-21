@@ -9,9 +9,6 @@ using System.Collections.Generic;
 using Object_Oriented_Map_System.MapSystem;
 using Object_Oriented_Map_System.MapSystem.Tiles;
 using Object_Oriented_Map_System.Entities; 
-using Microsoft.Xna.Framework.Audio;
-using System.ComponentModel.Design;
-using System.Runtime.CompilerServices;
 using Object_Oriented_Map_System.QuestSystem;
 
 
@@ -56,7 +53,6 @@ namespace Object_Oriented_Map_System.Managers
 
         public List<Enemy> Enemies { get; private set; } = new List<Enemy>();
         private List<Enemy> enemiesToRemove = new List<Enemy>(); // New list to track dead enemies
-        private TurnState lastLoggedState = TurnState.PlayerTurn;
 
         public static Texture2D whiteTexture;
 
